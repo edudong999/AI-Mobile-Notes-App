@@ -57,7 +57,9 @@ public class CategoryPhotosFragment extends Fragment {
 
         exec.execute(() -> {
             Result<?> r = repo.photos(categoryId, 1, 60);
-            getActivity().runOnUiThread(() -> {
+            final android.app.Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> {
                 if (r instanceof Result.Success) {
                     CategoryPhotosResponse data = (CategoryPhotosResponse) ((Result.Success<?>) r).data;
                     List<PhotoListItem> items = data.list.stream().map(p -> {
@@ -73,5 +75,10 @@ public class CategoryPhotosFragment extends Fragment {
                 }
             });
         });
+    }
+
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        exec.shutdown();
     }
 }

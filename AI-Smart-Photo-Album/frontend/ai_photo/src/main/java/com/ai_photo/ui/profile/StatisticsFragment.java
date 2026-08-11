@@ -22,22 +22,31 @@ public class StatisticsFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_statistics, container, false);
     }
 
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        exec.shutdown();
+    }
+
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle b) {
         super.onViewCreated(view, b);
         exec.execute(() -> {
             Result<?> r = RetrofitClient.exec(RetrofitClient.api().statistics());
-            getActivity().runOnUiThread(() -> {
+            final android.app.Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> {
                 if (r instanceof Result.Success) {
-                    bind(view, (StatisticsResponse) ((Result.Success<?>) r).data);
+                    bind(getView(), (StatisticsResponse) ((Result.Success<?>) r).data);
                 }
             });
         });
     }
 
     private void bind(View v, StatisticsResponse s) {
+        if (v == null) return;
         ((TextView) v.findViewById(R.id.total_photos)).setText("Total: " + s.totalPhotos);
         ((TextView) v.findViewById(R.id.analyzed_photos)).setText("Analyzed: " + s.analyzedPhotos);
         ((TextView) v.findViewById(R.id.favorite_count)).setText("Favorites: " + s.favoriteCount);
+        if (s.categoryDistribution == null) return;
         fillDist((LinearLayout) v.findViewById(R.id.scene_dist), s.categoryDistribution.scene);
         fillDist((LinearLayout) v.findViewById(R.id.emotion_dist), s.categoryDistribution.emotion);
         fillDist((LinearLayout) v.findViewById(R.id.tag_dist), s.categoryDistribution.tag);

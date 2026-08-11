@@ -27,6 +27,11 @@ public class ProfileFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_profile, container, false);
     }
 
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        exec.shutdown();
+    }
+
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle b) {
         super.onViewCreated(view, b);
         view.findViewById(R.id.btn_favorites).setOnClickListener(v ->
@@ -39,12 +44,16 @@ public class ProfileFragment extends Fragment {
 
         exec.execute(() -> {
             Result<?> r = RetrofitClient.exec(RetrofitClient.api().me());
-            getActivity().runOnUiThread(() -> {
+            final android.app.Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> {
+                View v = getView();
+                if (v == null) return;
                 if (r instanceof Result.Success) {
                     UserMeResponse u = (UserMeResponse) ((Result.Success<?>) r).data;
-                    ((android.widget.TextView) view.findViewById(R.id.username)).setText(u.username);
-                    ((android.widget.TextView) view.findViewById(R.id.email)).setText(u.email);
-                    ((android.widget.TextView) view.findViewById(R.id.created_at)).setText(u.createdAt);
+                    ((android.widget.TextView) v.findViewById(R.id.username)).setText(u.username);
+                    ((android.widget.TextView) v.findViewById(R.id.email)).setText(u.email);
+                    ((android.widget.TextView) v.findViewById(R.id.created_at)).setText(u.createdAt);
                 }
             });
         });
@@ -53,10 +62,12 @@ public class ProfileFragment extends Fragment {
     private void doLogout() {
         exec.execute(() -> {
             authRepo.logout();
-            getActivity().runOnUiThread(() -> {
+            final android.app.Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> {
                 Toast.makeText(getContext(), R.string.msg_logout_ok, Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(getContext(), LoginActivity.class));
-                requireActivity().finishAffinity();
+                a.finishAffinity();
             });
         });
     }

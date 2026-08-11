@@ -28,6 +28,11 @@ public class FavoritesFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_favorites, container, false);
     }
 
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        exec.shutdown();
+    }
+
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle b) {
         super.onViewCreated(view, b);
         RecyclerView recycler = view.findViewById(R.id.recycler);
@@ -45,7 +50,9 @@ public class FavoritesFragment extends Fragment {
 
         exec.execute(() -> {
             Result<?> r = RetrofitClient.exec(RetrofitClient.api().favorites(1, 60));
-            getActivity().runOnUiThread(() -> {
+            final android.app.Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> {
                 if (r instanceof Result.Success) {
                     FavoriteResponse data = (FavoriteResponse) ((Result.Success<?>) r).data;
                     List<PhotoListItem> items = data.list.stream().map(f -> {

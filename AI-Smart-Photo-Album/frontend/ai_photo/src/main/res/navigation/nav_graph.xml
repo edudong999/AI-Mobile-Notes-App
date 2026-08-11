@@ -50,4 +50,18 @@
     <action
         android:id="@+id/action_to_detail"
         app:destination="@id/photoDetailFragment" />
+
+    <fragment
+        android:id="@+id/categoryPhotosFragment"
+        android:name="com.ai_photo.ui.categories.CategoryPhotosFragment"
+        android:label="Photos"
+        xmlns:tools="http://schemas.android.com/tools"
+        tools:layout="@layout/fragment_category_photos">
+        <argument android:name="categoryId" app:argType="long" />
+        <argument android:name="categoryName" app:argType="string" />
+    </fragment>
+
+    <action
+        android:id="@+id/action_to_category_photos"
+        app:destination="@id/categoryPhotosFragment" />
 </navigation>

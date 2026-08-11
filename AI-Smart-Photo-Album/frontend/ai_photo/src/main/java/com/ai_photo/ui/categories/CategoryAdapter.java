@@ -24,7 +24,7 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.VH> {
     }
 
     @NonNull @Override public VH onCreateViewHolder(@NonNull ViewGroup p, int t) {
-        return new VH(LayoutInflater.from(p.getContext()).inflate(R.layout.item_category, p, false));
+        return new VH(LayoutInflater.from(p.getContext()).inflate(R.layout.item_category_row, p, false));
     }
 
     @Override public void onBindViewHolder(@NonNull VH h, int pos) {

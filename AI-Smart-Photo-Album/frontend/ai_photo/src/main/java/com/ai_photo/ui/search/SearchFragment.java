@@ -1,5 +1,6 @@
 package com.ai_photo.ui.search;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.view.*;
 import android.widget.*;
@@ -41,6 +42,11 @@ public class SearchFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_search, container, false);
     }
 
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        exec.shutdown();
+    }
+
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle b) {
         super.onViewCreated(view, b);
         TabLayout tabs = view.findViewById(R.id.tabs);
@@ -78,7 +84,10 @@ public class SearchFragment extends Fragment {
             Map<String, Long> s = loadOne("scene");
             Map<String, Long> e = loadOne("emotion");
             Map<String, Long> t = loadOne("tag");
-            getActivity().runOnUiThread(() -> {
+            final Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> {
+                if (getView() == null) return;
                 sceneMap = s; emotionMap = e; tagMap = t;
                 sceneSpinner.setAdapter(spinnerAdapter(sceneMap.keySet()));
                 emotionSpinner.setAdapter(spinnerAdapter(emotionMap.keySet()));
@@ -109,7 +118,9 @@ public class SearchFragment extends Fragment {
         if (q.isEmpty()) { Toast.makeText(getContext(), "query empty", Toast.LENGTH_SHORT).show(); return; }
         exec.execute(() -> {
             Result<?> r = photoRepo.search(q, 1, 30);
-            getActivity().runOnUiThread(() -> showResults(r));
+            final Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> showResults(r));
         });
     }
 
@@ -123,7 +134,9 @@ public class SearchFragment extends Fragment {
         }
         exec.execute(() -> {
             Result<?> r = photoRepo.filter(sId, eId, tId, 1, 30);
-            getActivity().runOnUiThread(() -> showResults(r));
+            final Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> showResults(r));
         });
     }
 

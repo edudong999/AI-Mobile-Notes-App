@@ -52,10 +52,18 @@ public class AiQueueFragment extends Fragment {
         handler.removeCallbacks(poller);
     }
 
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        exec.shutdown();
+    }
+
     private void fetchStatus() {
         exec.execute(() -> {
             Result<?> r = RetrofitClient.exec(RetrofitClient.api().aiStatus());
-            getActivity().runOnUiThread(() -> {
+            final android.app.Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> {
+                if (getView() == null) return;
                 if (r instanceof Result.Success) {
                     AiStatusResponse s = (AiStatusResponse) ((Result.Success<?>) r).data;
                     statusSummary.setText(String.format(

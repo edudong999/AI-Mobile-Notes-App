@@ -85,4 +85,15 @@
     <action
         android:id="@+id/action_to_statistics"
         app:destination="@id/statisticsFragment" />
+
+    <fragment
+        android:id="@+id/adminCategoryFragment"
+        android:name="com.ai_photo.ui.admin.AdminCategoryFragment"
+        android:label="Admin"
+        xmlns:tools="http://schemas.android.com/tools"
+        tools:layout="@layout/fragment_admin_category" />
+
+    <action
+        android:id="@+id/action_to_admin"
+        app:destination="@id/adminCategoryFragment" />
 </navigation>

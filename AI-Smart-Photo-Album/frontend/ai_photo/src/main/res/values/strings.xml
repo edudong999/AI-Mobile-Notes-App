@@ -349,4 +349,32 @@
     <string name="detail_action_fav"><b>收藏</b></string>
     <string name="detail_action_share"><b>分享</b></string>
     <string name="detail_action_delete"><b>删除</b></string>
+
+    <string name="title_login">登录</string>
+    <string name="title_register">注册</string>
+    <string name="title_photos">照片</string>
+    <string name="title_search">搜索</string>
+    <string name="title_categories">分类</string>
+    <string name="title_ai">AI 队列</string>
+    <string name="title_profile">我的</string>
+
+    <string name="hint_username">用户名</string>
+    <string name="hint_password">密码</string>
+    <string name="hint_email">邮箱</string>
+    <string name="btn_login">登录</string>
+    <string name="btn_register">注册</string>
+    <string name="btn_logout">登出</string>
+    <string name="btn_upload">上传</string>
+    <string name="btn_reanalyze">重新分析</string>
+    <string name="btn_retry">重试</string>
+
+    <string name="tab_scene">场景</string>
+    <string name="tab_emotion">情感</string>
+    <string name="tab_tag">标签</string>
+
+    <string name="msg_login_ok">登录成功</string>
+    <string name="msg_register_ok">注册成功</string>
+    <string name="msg_upload_ok">上传成功</string>
+    <string name="msg_logout_ok">登出成功</string>
+    <string name="msg_network_err">网络异常，请检查后端是否启动（10.0.2.2:8000）</string>
 </resources>

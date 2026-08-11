@@ -82,4 +82,11 @@
     <!-- 页面背景渐变 (蓝→白) -->
     <color name="ai_bg_top">#EAF1FF</color>
     <color name="ai_bg_bottom">#F8F9FA</color>
+
+    <color name="category_scene">#4FC3F7</color>
+    <color name="category_emotion">#FF8A65</color>
+    <color name="category_tag">#AED581</color>
+    <color name="status_pending">#FFC107</color>
+    <color name="status_done">#4CAF50</color>
+    <color name="status_failed">#F44336</color>
 </resources>

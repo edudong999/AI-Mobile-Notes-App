@@ -1,5 +1,6 @@
 package com.ai_photo.ui.photos;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.view.*;
 import android.widget.*;
@@ -40,10 +41,17 @@ public class PhotoDetailFragment extends Fragment {
         load();
     }
 
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        exec.shutdown();
+    }
+
     private void load() {
         exec.execute(() -> {
             Result<?> r = photoRepo.detail(photoId);
-            getActivity().runOnUiThread(() -> {
+            final Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> {
                 if (r instanceof Result.Success) {
                     bind((PhotoDetailResponse) ((Result.Success<?>) r).data);
                 } else if (r instanceof Result.Error) {
@@ -83,7 +91,9 @@ public class PhotoDetailFragment extends Fragment {
     private void reanalyze() {
         exec.execute(() -> {
             Result<?> r = aiRepo.reanalyze(Collections.singletonList(photoId));
-            getActivity().runOnUiThread(() -> {
+            final Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> {
                 if (r instanceof Result.Success) {
                     Toast.makeText(getContext(), "queued", Toast.LENGTH_SHORT).show();
                 } else if (r instanceof Result.Error) {
@@ -99,7 +109,9 @@ public class PhotoDetailFragment extends Fragment {
         String desc = ((EditText) v.findViewById(R.id.desc_input)).getText().toString();
         exec.execute(() -> {
             Result<?> r = photoRepo.update(photoId, null, desc);
-            getActivity().runOnUiThread(() -> {
+            final Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> {
                 if (r instanceof Result.Success) {
                     Toast.makeText(getContext(), "saved", Toast.LENGTH_SHORT).show();
                     load();

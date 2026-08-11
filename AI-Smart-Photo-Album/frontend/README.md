@@ -268,3 +268,72 @@ AI_SERVICE=real
 - Android 客户端 `versionName = 1.0`，`versionCode = 1`
 - API 协议见 `../docs/interface.md`
 - 完整 4 层架构说明见仓库根 `README.md`
+
+## How to Run the Android Demo
+
+### Prerequisites
+- Android Studio (latest stable, e.g., Hedgehog or Iguana)
+- Backend running at `http://127.0.0.1:8000` (FastAPI)
+- Android Virtual Device: Pixel 5 / API 33 (or higher)
+
+### Steps
+1. **Start the backend** (in another terminal):
+   ```bash
+   cd AI-Smart-Photo-Album/backend
+   source .venv/bin/activate    # or your virtualenv
+   uvicorn app.main:app --reload
+   ```
+2. **Open Android Studio** → File → Open → select `frontend/`
+3. **Wait for Gradle sync** to complete
+4. **Start an AVD**: Tools → Device Manager → Create / Play a Pixel 5 API 33 device
+5. **Select the `ai_photo` run configuration** in the toolbar (NOT `:app`)
+6. **Click Run** → app installs and launches on the AVD
+7. **Login screen appears** → tap "立即注册" → fill username/password/email → Submit
+8. **You should land on the Photos tab**
+
+### Verifying all 27 endpoints
+
+The demo app calls all 27 backend endpoints across the 12 screens:
+
+| Screen | Endpoints exercised |
+|---|---|
+| Login | POST /auth/login, POST /auth/register, POST /auth/logout |
+| Photos | GET /photos, POST /photos/upload, POST/DELETE /photos/{id}/favorite |
+| Detail | GET /photos/{id}, PATCH /photos/{id}, POST /ai/reanalyze |
+| Search | POST /photos/search, POST /photos/filter |
+| Categories | GET /categories, GET /categories/{id}/photos |
+| AI | GET /ai/status |
+| Profile | GET /users/me |
+| Favorites | GET /users/me/favorites |
+| Statistics | GET /users/me/statistics |
+| Admin | GET/POST/PATCH/DELETE /admin/categories, POST /admin/categories/reset |
+
+### Troubleshooting
+
+- **"Failed to connect to 10.0.2.2:8000"**: Backend not running, or firewall blocking. Verify `curl http://127.0.0.1:8000/docs` returns the Swagger UI.
+- **Gradle sync fails on first run**: Slow network downloading dependencies. Re-sync; consider mirror in `settings.gradle.kts`.
+- **Network error after backend change**: Cold-restart the AVD (not just relaunch app) so DNS / network cache clears.
+- **Upload button does nothing**: Permissions denied. Settings → Apps → ai_photo → Permissions → enable Photos / Storage.
+
+## Smoke Test Checklist
+
+Run through this manually in the AVD after first install:
+
+- [ ] Login → register new user → see Toast "注册成功"
+- [ ] Photos tab → empty grid → FAB → select 2 images → Toast "上传成功"
+- [ ] Photos tab → grid shows 2 thumbnails within 2s
+- [ ] Wait 5s → swipe refresh → thumbnails unchanged (already loaded)
+- [ ] Tap a photo → Detail screen → metadata visible
+- [ ] Wait 30s → pull-to-refresh on Detail → AI fields populated
+- [ ] Tap star on a grid photo → star fills → re-fetch confirms favorite=true
+- [ ] Search tab → input "海滩" (or "test") → tap Go → see results list (or empty)
+- [ ] Search tab → switch to Filter → pick scene category → tap Apply → see results
+- [ ] Categories tab → switch between Scene/Emotion/Tag → see ~20 items each
+- [ ] Tap a category → grid of photos in that category
+- [ ] AI tab → see progress bar / status summary → wait 3s → updates
+- [ ] Profile tab → username + email visible
+- [ ] Profile → Favorites → grid of favorited photos
+- [ ] Profile → Statistics → counts visible + category distribution rows
+- [ ] Profile → Admin → CRUD test: New "MyTag" → see it in list → Edit → rename → Del → confirm
+- [ ] Admin → Reset → confirm → see 60 default categories back
+- [ ] Profile → Logout → returns to Login screen → can't reach MainActivity directly

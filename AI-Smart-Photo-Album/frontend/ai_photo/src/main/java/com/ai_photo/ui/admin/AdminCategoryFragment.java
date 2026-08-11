@@ -53,10 +53,17 @@ public class AdminCategoryFragment extends Fragment {
         load();
     }
 
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        exec.shutdown();
+    }
+
     private void load() {
         exec.execute(() -> {
             Result<?> r = repo.list(currentType);
-            getActivity().runOnUiThread(() -> {
+            final android.app.Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> {
                 if (r instanceof Result.Success) {
                     adapter.submit(((com.ai_photo.data.model.admin.AdminCategoryListResponse)
                         ((Result.Success<?>) r).data).list);
@@ -76,7 +83,9 @@ public class AdminCategoryFragment extends Fragment {
                 if (name.isEmpty()) return;
                 exec.execute(() -> {
                     Result<?> r = repo.create(currentType, name, null);
-                    getActivity().runOnUiThread(() -> {
+                    final android.app.Activity a = getActivity();
+                    if (a == null) return;
+                    a.runOnUiThread(() -> {
                         if (r instanceof Result.Success) load();
                         else if (r instanceof Result.Error) toast(((Result.Error<?>) r).message);
                     });
@@ -97,7 +106,9 @@ public class AdminCategoryFragment extends Fragment {
                 if (name.isEmpty()) return;
                 exec.execute(() -> {
                     Result<?> r = repo.update(item.categoryId, name, null);
-                    getActivity().runOnUiThread(() -> {
+                    final android.app.Activity a = getActivity();
+                    if (a == null) return;
+                    a.runOnUiThread(() -> {
                         if (r instanceof Result.Success) load();
                         else if (r instanceof Result.Error) toast(((Result.Error<?>) r).message);
                     });
@@ -112,7 +123,9 @@ public class AdminCategoryFragment extends Fragment {
             .setTitle("Delete " + item.name + "?")
             .setPositiveButton("Delete", (d, w) -> exec.execute(() -> {
                 Result<?> r = repo.delete(item.categoryId);
-                getActivity().runOnUiThread(() -> {
+                final android.app.Activity a = getActivity();
+                if (a == null) return;
+                a.runOnUiThread(() -> {
                     if (r instanceof Result.Success) load();
                     else if (r instanceof Result.Error) toast(((Result.Error<?>) r).message);
                 });
@@ -127,7 +140,9 @@ public class AdminCategoryFragment extends Fragment {
             .setMessage("Removes all custom categories and re-seeds the 60 defaults.")
             .setPositiveButton("Reset", (d, w) -> exec.execute(() -> {
                 Result<?> r = repo.reset();
-                getActivity().runOnUiThread(() -> {
+                final android.app.Activity a = getActivity();
+                if (a == null) return;
+                a.runOnUiThread(() -> {
                     if (r instanceof Result.Success) load();
                     else if (r instanceof Result.Error) toast(((Result.Error<?>) r).message);
                 });

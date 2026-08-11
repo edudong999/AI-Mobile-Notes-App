@@ -64,4 +64,25 @@
     <action
         android:id="@+id/action_to_category_photos"
         app:destination="@id/categoryPhotosFragment" />
+
+    <fragment
+        android:id="@+id/favoritesFragment"
+        android:name="com.ai_photo.ui.profile.FavoritesFragment"
+        android:label="Favorites"
+        xmlns:tools="http://schemas.android.com/tools"
+        tools:layout="@layout/fragment_favorites" />
+
+    <fragment
+        android:id="@+id/statisticsFragment"
+        android:name="com.ai_photo.ui.profile.StatisticsFragment"
+        android:label="Statistics"
+        xmlns:tools="http://schemas.android.com/tools"
+        tools:layout="@layout/fragment_statistics" />
+
+    <action
+        android:id="@+id/action_to_favorites"
+        app:destination="@id/favoritesFragment" />
+    <action
+        android:id="@+id/action_to_statistics"
+        app:destination="@id/statisticsFragment" />
 </navigation>

@@ -71,11 +71,19 @@ public class PhotoListFragment extends Fragment {
         refresh();
     }
 
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        exec.shutdown();
+    }
+
     private void refresh() {
         swipe.setRefreshing(true);
         exec.execute(() -> {
             Result<?> r = repo.list(1, 60);
-            getActivity().runOnUiThread(() -> {
+            final android.app.Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> {
+                if (getView() == null) return;
                 swipe.setRefreshing(false);
                 if (r instanceof Result.Success) {
                     Result.Success<PhotoListResponse> ok = (Result.Success<PhotoListResponse>) r;
@@ -94,7 +102,10 @@ public class PhotoListFragment extends Fragment {
         swipe.setRefreshing(true);
         exec.execute(() -> {
             Result<?> r = repo.uploadFromUris(getContext(), uris);
-            getActivity().runOnUiThread(() -> {
+            final android.app.Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> {
+                if (getView() == null) return;
                 swipe.setRefreshing(false);
                 if (r instanceof Result.Success) {
                     Toast.makeText(getContext(), R.string.msg_upload_ok, Toast.LENGTH_SHORT).show();

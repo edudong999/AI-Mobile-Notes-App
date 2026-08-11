@@ -49,11 +49,19 @@ public class CategoriesFragment extends Fragment {
         load(0);
     }
 
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        exec.shutdown();
+    }
+
     private void load(int idx) {
         String type = TYPES[idx];
         exec.execute(() -> {
             Result<?> r = repo.list(type);
-            getActivity().runOnUiThread(() -> {
+            final android.app.Activity a = getActivity();
+            if (a == null) return;
+            a.runOnUiThread(() -> {
+                if (getView() == null) return;
                 if (r instanceof Result.Success) {
                     CategoryListResponse data = (CategoryListResponse) ((Result.Success<?>) r).data;
                     adapter.submit(data.list);

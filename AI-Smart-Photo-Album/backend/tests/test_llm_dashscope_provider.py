@@ -33,3 +33,14 @@ def test_factory_returns_dashscope_when_configured(monkeypatch):
     assert p.name == "dashscope"
     monkeypatch.undo()
     get_provider.cache_clear()
+
+
+def test_instantiation_with_fake_key_does_not_call_api():
+    """Verify provider can be constructed and async wrappers exist (no network)."""
+    p = DashScopeProvider(api_key="sk-fake-for-test-only", timeout=5)
+    assert p.name == "dashscope"
+    assert hasattr(p, "_call_with_timeout")
+    assert asyncio.iscoroutinefunction(p.analyze_image)
+    assert asyncio.iscoroutinefunction(p.summarize)
+    # Verify the async machinery itself runs (timeout on a 5s sleep = no error)
+    asyncio.run(p._call_with_timeout(asyncio.sleep(0.001)))

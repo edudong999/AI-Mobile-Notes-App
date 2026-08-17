@@ -6,7 +6,9 @@ from .provider import LLMProvider
 
 try:
     import dashscope
-    from dashscope import MultiModalConversation, Generation, TextEmbedding
+    from dashscope import (
+        AioMultiModalConversation, AioGeneration, TextEmbedding,
+    )
     _HAS_DASHSCOPE = True
 except ImportError:
     _HAS_DASHSCOPE = False
@@ -51,7 +53,7 @@ class DashScopeProvider(LLMProvider):
             ],
         }]
         resp = await self._call_with_timeout(
-            MultiModalConversation.acall(model=self.ocr_model, messages=messages)
+            AioMultiModalConversation.acall(model=self.ocr_model, messages=messages)
         )
         if resp.status_code != 200:
             raise LLMAuthError(f"OCR 调用失败: {resp.code} {resp.message}")
@@ -107,8 +109,10 @@ class DashScopeProvider(LLMProvider):
         return await self._gen(f"请将下面内容翻译为{lang}：\n\n{text}")
 
     async def embed(self, text: str) -> list[float]:
+        def _sync_embed_call():
+            return TextEmbedding.call(model=self.embed_model, input=text)
         resp = await self._call_with_timeout(
-            TextEmbedding.acall(model=self.embed_model, input=text)
+            asyncio.to_thread(_sync_embed_call)
         )
         if resp.status_code != 200:
             raise LLMAuthError(f"embed 失败: {resp.code} {resp.message}")
@@ -116,7 +120,7 @@ class DashScopeProvider(LLMProvider):
 
     async def _gen(self, prompt: str) -> str:
         resp = await self._call_with_timeout(
-            Generation.acall(model=self.llm_model, prompt=prompt, result_format="message")
+            AioGeneration.acall(model=self.llm_model, prompt=prompt, result_format="message")
         )
         if resp.status_code != 200:
             raise LLMAuthError(f"Generation 失败: {resp.code} {resp.message}")

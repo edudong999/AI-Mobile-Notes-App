@@ -77,12 +77,6 @@
     <string name="search_ai_mood_value">开心</string>
     <string name="search_ai_tag_value">夏天、朋友、大笑</string>
 
-    <!-- ====== 底部导航 (统一文案) ====== -->
-    <string name="nav_home">首页</string>
-    <string name="nav_album">相册</string>
-    <string name="nav_ai">AI 分析</string>
-    <string name="nav_me">我的</string>
-
     <!-- ====== "我的" 个人中心页 ====== -->
     <string name="profile_title"><b>我的</b></string>
     <string name="profile_subtitle">查看个人数据与收藏内容</string>

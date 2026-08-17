@@ -112,10 +112,12 @@ async def test_claim_returns_queued_tasks(db):
     w = AIWorker(worker_id="test-claim-1")
     claimed = await w._claim(n=2)
     assert len(claimed) == 2
+    # _claim 返回 list[dict]，含 photo_id/kind/note_id/sub_kind/task_id
+    claimed_pids = [c["photo_id"] for c in claimed]
 
     rows = (await db.execute(
         select(AITask.photo_id, AITask.status, AITask.claimed_by)
-        .where(AITask.photo_id.in_(claimed))
+        .where(AITask.photo_id.in_(claimed_pids))
     )).all()
     for photo_id, status, claimed_by in rows:
         assert status == AITaskStatus.processing
@@ -138,7 +140,8 @@ async def test_claim_skips_tasks_with_future_next_retry_at(db):
 
     w = AIWorker(worker_id="test-claim-2")
     claimed = await w._claim(n=5)
-    assert claimed == [pid_ready]
+    # _claim 返回 list[dict]
+    assert [c["photo_id"] for c in claimed] == [pid_ready]
 
 
 @pytest.mark.asyncio
@@ -189,7 +192,11 @@ async def test_on_failure_will_retry_under_max(db):
     pid = await _make_photo(db)
     await _make_task(db, pid, status=AITaskStatus.processing, retry_count=0, max_retries=3)
 
-    await _on_failure(pid, "test error")
+    # _on_failure 新签名：接收 claim dict（含 kind + photo_id/note_id）
+    await _on_failure(
+        {"task_id": None, "kind": None, "photo_id": pid, "note_id": None, "sub_kind": None},
+        "test error",
+    )
 
     task = (await db.execute(select(AITask).where(AITask.photo_id == pid))).scalars().one()
     photo = await db.get(Photo, pid)
@@ -206,7 +213,10 @@ async def test_on_failure_final_after_max_retries(db):
     pid = await _make_photo(db)
     await _make_task(db, pid, status=AITaskStatus.processing, retry_count=3, max_retries=3)
 
-    await _on_failure(pid, "still failing")
+    await _on_failure(
+        {"task_id": None, "kind": None, "photo_id": pid, "note_id": None, "sub_kind": None},
+        "still failing",
+    )
 
     task = (await db.execute(select(AITask).where(AITask.photo_id == pid))).scalars().one()
     photo = await db.get(Photo, pid)

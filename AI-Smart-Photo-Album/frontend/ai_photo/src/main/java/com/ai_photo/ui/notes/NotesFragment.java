@@ -23,6 +23,7 @@ import com.ai_photo.data.model.note.NoteListItem;
 import com.ai_photo.data.repo.NoteRepo;
 import com.ai_photo.util.BgExecutor;
 import com.ai_photo.util.Result;
+import androidx.navigation.fragment.NavHostFragment;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,10 +67,12 @@ public class NotesFragment extends Fragment {
         com.google.android.material.floatingactionbutton.FloatingActionButton fab =
             view.findViewById(R.id.fab_new);
 
-        adapter = new NotesAdapter(item ->
-            android.widget.Toast.makeText(getContext(),
-                getString(R.string.notes_open_fmt, item.noteId),
-                android.widget.Toast.LENGTH_SHORT).show());
+        adapter = new NotesAdapter(item -> {
+            Bundle args = new Bundle();
+            args.putLong("noteId", item.noteId);
+            NavHostFragment.findNavController(this)
+                .navigate(R.id.action_to_note_detail, args);
+        });
         recycler.setLayoutManager(new LinearLayoutManager(getContext()));
         recycler.setAdapter(adapter);
 

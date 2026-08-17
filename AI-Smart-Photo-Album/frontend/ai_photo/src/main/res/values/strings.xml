@@ -488,4 +488,22 @@
     <string name="notes_capture_queued">图片已加入上传队列</string>
     <string name="notes_open_fmt">打开笔记 %1$d</string>
     <string name="notes_filter_all">全部</string>
+
+    <!-- ====== 笔记详情 (Task 18) ====== -->
+    <string name="note_detail_editor_hint">在此编辑正文…</string>
+    <string name="note_detail_empty">正文为空，无法应用 AI</string>
+    <string name="note_detail_saved">已保存</string>
+    <string name="note_ai_polish">润色</string>
+    <string name="note_ai_translate">翻译</string>
+    <string name="note_ai_questions">出题</string>
+    <string name="note_ai_ocr">OCR</string>
+    <string name="note_ai_summary">摘要</string>
+    <string name="note_ai_ocr_queued">OCR 已入队</string>
+    <string name="note_ai_summary_queued">摘要已入队</string>
+    <string name="note_ai_questions_queued">已生成 %1$d 道题</string>
+    <string name="note_ai_diff_title">%1$s 结果</string>
+    <string name="note_ai_diff_original_label">原文</string>
+    <string name="note_ai_diff_ai_label">AI 输出</string>
+    <string name="note_ai_diff_accept">采用</string>
+    <string name="note_ai_diff_reject">放弃</string>
 </resources>

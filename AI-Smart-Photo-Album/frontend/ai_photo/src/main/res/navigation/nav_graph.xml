@@ -102,4 +102,16 @@
         android:name="com.ai_photo.ui.notes.NotesFragment"
         android:label="@string/nav_notes"
         tools:layout="@layout/fragment_notes" />
+
+    <fragment
+        android:id="@+id/noteDetailFragment"
+        android:name="com.ai_photo.ui.notes.NoteDetailFragment"
+        android:label="Note"
+        tools:layout="@layout/fragment_note_detail">
+        <argument android:name="noteId" app:argType="long" />
+    </fragment>
+
+    <action
+        android:id="@+id/action_to_note_detail"
+        app:destination="@id/noteDetailFragment" />
 </navigation>

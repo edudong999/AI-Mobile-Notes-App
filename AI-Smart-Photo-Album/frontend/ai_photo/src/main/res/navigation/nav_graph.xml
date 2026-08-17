@@ -96,4 +96,10 @@
     <action
         android:id="@+id/action_to_admin"
         app:destination="@id/adminCategoryFragment" />
+
+    <fragment
+        android:id="@+id/notesFragment"
+        android:name="com.ai_photo.ui.notes.NotesFragment"
+        android:label="@string/nav_notes"
+        tools:layout="@layout/fragment_notes" />
 </navigation>

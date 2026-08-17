@@ -25,7 +25,11 @@ log = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """应用生命周期：迁移、建表、seed、启停 worker。"""
     # 顺序敏感：先建表，再跑增量迁移（003 给 ai_tasks 加 worker 字段）
-    for mig in ("migrations/001_schema.sql", "migrations/003_ai_task_worker.sql"):
+    for mig in (
+        "migrations/001_schema.sql",
+        "migrations/003_ai_task_worker.sql",
+        "migrations/004_note_tables.sql",
+    ):
         if Path(mig).exists():
             await run_sql_file(mig)
 

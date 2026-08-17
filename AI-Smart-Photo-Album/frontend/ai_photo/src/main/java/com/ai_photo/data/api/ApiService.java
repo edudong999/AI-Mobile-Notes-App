@@ -69,10 +69,11 @@ public interface ApiService {
     Call<Envelope<Object>> unfavorite(@Path("id") long id);
 
     @POST("api/v1/photos/search")
-    Call<Envelope<SearchResponse>> search(@Body SearchRequest req);
+    Call<Envelope<com.ai_photo.data.model.photo.SearchResponse>> search(
+        @Body com.ai_photo.data.model.photo.SearchRequest req);
 
     @POST("api/v1/photos/filter")
-    Call<Envelope<SearchResponse>> filter(@Body FilterRequest req);
+    Call<Envelope<com.ai_photo.data.model.photo.SearchResponse>> filter(@Body FilterRequest req);
 
     // ===== Categories (3) =====
     @GET("api/v1/categories/preview")
@@ -177,5 +178,6 @@ public interface ApiService {
 
     // ===== Notes: Search (1) =====
     @POST("api/v1/note-search")
-    Call<Envelope<SearchResponse>> noteSearch(@Body SearchRequest req);
+    Call<Envelope<com.ai_photo.data.model.note_search.SearchResponse>> noteSearch(
+        @Body com.ai_photo.data.model.note_search.SearchRequest req);
 }

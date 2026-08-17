@@ -15,6 +15,7 @@ import com.ai_photo.R;
 import com.ai_photo.data.local.NoteEntity;
 import com.ai_photo.data.local.NoteFileEntity;
 import com.ai_photo.data.model.note.NoteDetailResponse;
+import com.ai_photo.data.model.note_ai.EnqueueResponse;
 import com.ai_photo.data.repo.NoteAiRepo;
 import com.ai_photo.data.repo.NoteRepo;
 import com.ai_photo.util.BgExecutor;
@@ -83,15 +84,15 @@ public class NoteDetailFragment extends Fragment {
                 }
             }));
         view.findViewById(R.id.btn_ocr).setOnClickListener(v ->
-            ai.runOcr(noteId, new com.ai_photo.util.ResultCallback<Object>() {
-                @Override public void onSuccess(Object data) {
+            ai.runOcr(noteId, new com.ai_photo.util.ResultCallback<EnqueueResponse>() {
+                @Override public void onSuccess(EnqueueResponse data) {
                     Toast.makeText(getContext(), R.string.note_ai_ocr_queued, Toast.LENGTH_SHORT).show();
                 }
                 @Override public void onError(String err) { Toast.makeText(getContext(), err, Toast.LENGTH_SHORT).show(); }
             }));
         view.findViewById(R.id.btn_summary).setOnClickListener(v ->
-            ai.runSummary(noteId, new com.ai_photo.util.ResultCallback<Object>() {
-                @Override public void onSuccess(Object data) {
+            ai.runSummary(noteId, new com.ai_photo.util.ResultCallback<EnqueueResponse>() {
+                @Override public void onSuccess(EnqueueResponse data) {
                     Toast.makeText(getContext(), R.string.note_ai_summary_queued, Toast.LENGTH_SHORT).show();
                 }
                 @Override public void onError(String err) { Toast.makeText(getContext(), err, Toast.LENGTH_SHORT).show(); }

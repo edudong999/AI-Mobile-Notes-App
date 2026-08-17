@@ -118,9 +118,10 @@ public class CaptureFragment extends Fragment {
         if (pos > 0 && pos - 1 < folders.size()) {
             folderId = folders.get(pos - 1).folderId;
         }
+        final Long finalFolderId = folderId;
         BgExecutor.execute(() -> {
             // 1) create note
-            Result<?> cr = repo.createNote(folderId, title, "");
+            Result<?> cr = repo.createNote(finalFolderId, title, "");
             if (!(cr instanceof Result.Success)) {
                 String msg = cr instanceof Result.Error
                     ? ((Result.Error<?>) cr).message : getString(R.string.msg_network_err);
@@ -149,7 +150,7 @@ public class CaptureFragment extends Fragment {
             // 3) persist to room
             NoteEntity ne = new NoteEntity();
             ne.noteId = finalNoteId;
-            ne.folderId = folderId;
+            ne.folderId = finalFolderId;
             ne.title = title;
             ne.textContent = "";
             ne.aiStatus = "pending";

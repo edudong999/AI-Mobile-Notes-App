@@ -50,21 +50,21 @@ public class NoteAiActions {
         });
     }
 
-    public void runOcr(long noteId, com.ai_photo.util.ResultCallback<?> cb) {
+    public void runOcr(long noteId, com.ai_photo.util.ResultCallback<EnqueueResponse> cb) {
         BgExecutor.execute(() -> {
             Result<EnqueueResponse> r = repo.ocr(noteId);
             runOnMain(() -> {
-                if (r instanceof Result.Success) cb.onSuccess(((Result.Success<?>) r).data);
+                if (r instanceof Result.Success) cb.onSuccess(((Result.Success<EnqueueResponse>) r).data);
                 else cb.onError(err(r));
             });
         });
     }
 
-    public void runSummary(long noteId, com.ai_photo.util.ResultCallback<?> cb) {
+    public void runSummary(long noteId, com.ai_photo.util.ResultCallback<EnqueueResponse> cb) {
         BgExecutor.execute(() -> {
             Result<EnqueueResponse> r = repo.summary(noteId);
             runOnMain(() -> {
-                if (r instanceof Result.Success) cb.onSuccess(((Result.Success<?>) r).data);
+                if (r instanceof Result.Success) cb.onSuccess(((Result.Success<EnqueueResponse>) r).data);
                 else cb.onError(err(r));
             });
         });

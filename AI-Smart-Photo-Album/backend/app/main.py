@@ -15,7 +15,7 @@ from app.database import engine, run_sql_file
 from app.exceptions import BizException
 from app.models import Category
 from app.models.ai_task import start_worker, stop_worker
-from app.routers import admin_categories, ai, auth, categories, photos, users
+from app.routers import admin_categories, ai, auth, categories, folders, photos, users
 
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL, logging.INFO))
 log = logging.getLogger(__name__)
@@ -84,7 +84,7 @@ async def fallback_handler(_: Request, exc: Exception):
 Path(settings.DATA_DIR).mkdir(parents=True, exist_ok=True)
 app.mount(settings.STATIC_URL_PREFIX, StaticFiles(directory=settings.DATA_DIR), name="static")
 
-for r in (auth.router, users.router, photos.router, categories.router, ai.router, admin_categories.router):
+for r in (auth.router, users.router, photos.router, categories.router, folders.router, ai.router, admin_categories.router):
     app.include_router(r)
 
 

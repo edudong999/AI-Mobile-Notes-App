@@ -15,7 +15,7 @@ from app.database import engine, run_sql_file
 from app.exceptions import BizException
 from app.models import Category
 from app.models.ai_task import start_worker, stop_worker
-from app.routers import admin_categories, ai, auth, categories, folders, note_files, note_search, notes, photos, users
+from app.routers import admin_categories, ai, auth, categories, folders, note_ai, note_files, note_search, notes, photos, users
 
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL, logging.INFO))
 log = logging.getLogger(__name__)
@@ -84,11 +84,13 @@ async def fallback_handler(_: Request, exc: Exception):
 Path(settings.DATA_DIR).mkdir(parents=True, exist_ok=True)
 (Path(settings.DATA_DIR) / "note_files").mkdir(parents=True, exist_ok=True)
 (Path(settings.DATA_DIR) / "note_thumbs").mkdir(parents=True, exist_ok=True)
+(Path(settings.DATA_DIR) / "exports").mkdir(parents=True, exist_ok=True)
 app.mount(settings.STATIC_URL_PREFIX, StaticFiles(directory=settings.DATA_DIR), name="static")
+app.mount("/static/exports", StaticFiles(directory=Path(settings.DATA_DIR) / "exports"), name="exports")
 app.mount("/static/note_files", StaticFiles(directory=Path(settings.DATA_DIR) / "note_files"), name="note_files")
 app.mount("/static/note_thumbs", StaticFiles(directory=Path(settings.DATA_DIR) / "note_thumbs"), name="note_thumbs")
 
-for r in (auth.router, users.router, photos.router, categories.router, folders.router, notes.router, note_search.router, note_files.router, ai.router, admin_categories.router):
+for r in (auth.router, users.router, photos.router, categories.router, folders.router, notes.router, note_search.router, note_files.router, note_ai.router, ai.router, admin_categories.router):
     app.include_router(r)
 
 

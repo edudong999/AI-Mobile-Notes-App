@@ -66,7 +66,7 @@ public class CaptureFragment extends Fragment {
         });
         view.findViewById(R.id.capture_btn_save).setOnClickListener(v -> doSave());
         view.findViewById(R.id.capture_btn_cancel).setOnClickListener(v ->
-            requireActivity().onBackPressed());
+            requireActivity().getOnBackPressedDispatcher().onBackPressed());
         refreshFolders();
     }
 
@@ -162,7 +162,7 @@ public class CaptureFragment extends Fragment {
             if (a != null && !a.isDestroyed()) {
                 a.runOnUiThread(() -> {
                     Toast.makeText(getContext(), finalMsg, Toast.LENGTH_SHORT).show();
-                    requireActivity().onBackPressed();
+                    requireActivity().getOnBackPressedDispatcher().onBackPressed();
                 });
             }
         });

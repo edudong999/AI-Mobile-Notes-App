@@ -92,7 +92,7 @@ public class NoteRepo {
             }
         }
         RequestBody noteIdBody = RequestBody.create(
-            MediaType.parse("text/plain"), String.valueOf(noteId));
+            String.valueOf(noteId), MediaType.parse("text/plain"));
         return RetrofitClient.exec(RetrofitClient.api().uploadNoteFiles(parts, noteIdBody));
     }
 

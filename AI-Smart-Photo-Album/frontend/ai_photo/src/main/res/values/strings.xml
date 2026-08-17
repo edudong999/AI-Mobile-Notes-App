@@ -530,4 +530,14 @@
 
     <string name="question_bank_title">题库</string>
     <string name="questions_empty">还没有题目</string>
+
+    <!-- ====== Task 20 — 笔记搜索 ====== -->
+    <string name="search_hint">搜索笔记…</string>
+    <string name="search_action">搜索</string>
+    <string name="search_hint_required">请输入搜索词</string>
+    <string name="search_mode_keyword">关键词</string>
+    <string name="search_mode_semantic">语义</string>
+    <string name="search_mode_hybrid">混合</string>
+    <string name="search_results_empty">无结果</string>
+    <string name="search_results_fmt">共 %1$d 条结果</string>
 </resources>

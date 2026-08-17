@@ -146,4 +146,10 @@
     <action
         android:id="@+id/action_to_question_bank"
         app:destination="@id/questionBankFragment" />
+
+    <fragment
+        android:id="@+id/noteSearchFragment"
+        android:name="com.ai_photo.ui.notes.NoteSearchFragment"
+        android:label="@string/nav_search"
+        tools:layout="@layout/fragment_note_search" />
 </navigation>

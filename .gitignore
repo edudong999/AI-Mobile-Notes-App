@@ -62,7 +62,7 @@ data/thumb/
 *.pth
 *.onnx
 *.bin
-models/
+/models/
 weights/
 
 # 测试 / 缓存

@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     STATIC_URL_PREFIX: str = "/static"
     MAX_UPLOAD_SIZE_MB: int = 20
     LOG_LEVEL: str = "INFO"
+    llm_provider: str = "mock"
+    dashscope_api_key: str = ""
+    dashscope_ocr_model: str = "qwen-vl-max"
+    dashscope_llm_model: str = "qwen-plus"
+    dashscope_embed_model: str = "text-embedding-v3"
+    llm_timeout_sec: int = 30
 
 
 @lru_cache

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/notesFragment"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:title="@string/nav_notes" />
+    <item
+        android:id="@+id/noteSearchFragment"
+        android:icon="@android:drawable/ic_menu_search"
+        android:title="@string/nav_search" />
+    <item
+        android:id="@+id/aiQueueFragment"
+        android:icon="@android:drawable/ic_menu_recent_history"
+        android:title="@string/nav_ai" />
+    <item
+        android:id="@+id/profileFragment"
+        android:icon="@android:drawable/ic_menu_compass"
+        android:title="@string/nav_me" />
+</menu>

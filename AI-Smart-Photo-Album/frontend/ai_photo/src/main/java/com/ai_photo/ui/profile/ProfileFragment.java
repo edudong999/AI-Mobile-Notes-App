@@ -3,9 +3,11 @@ package com.ai_photo.ui.profile;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.*;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import com.ai_photo.R;
@@ -13,6 +15,7 @@ import com.ai_photo.data.api.RetrofitClient;
 import com.ai_photo.data.model.user.UserMeResponse;
 import com.ai_photo.data.repo.AuthRepo;
 import com.ai_photo.ui.login.LoginActivity;
+import com.ai_photo.util.AppMode;
 import com.ai_photo.util.BgExecutor;
 import com.ai_photo.util.Result;
 
@@ -33,6 +36,20 @@ public class ProfileFragment extends Fragment {
         view.findViewById(R.id.btn_admin).setOnClickListener(v ->
             NavHostFragment.findNavController(this).navigate(R.id.action_to_admin));
         view.findViewById(R.id.btn_logout).setOnClickListener(v -> doLogout());
+
+        // Mode toggle (Task 16) — checked = PHOTO mode, unchecked = NOTE mode
+        SwitchCompat modeSwitch = view.findViewById(R.id.mode_switch);
+        TextView modeLabel = view.findViewById(R.id.mode_label);
+        AppMode currentMode = AppMode.current(getContext());
+        modeSwitch.setChecked(currentMode == AppMode.PHOTO);
+        modeLabel.setText(currentMode == AppMode.PHOTO
+            ? R.string.mode_photo_label
+            : R.string.mode_note_label);
+        modeSwitch.setOnCheckedChangeListener((v, isChecked) -> {
+            AppMode newMode = isChecked ? AppMode.PHOTO : AppMode.NOTE;
+            AppMode.set(getContext(), newMode);
+            requireActivity().recreate();
+        });
 
         BgExecutor.execute(() -> {
             Result<?> r = RetrofitClient.exec(RetrofitClient.api().me());

@@ -1,8 +1,6 @@
 package com.ai_photo.ui.main;
 
 import android.os.Bundle;
-import android.view.MenuItem;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
@@ -10,13 +8,13 @@ import androidx.navigation.ui.NavigationUI;
 import com.ai_photo.AiPhotoApp;
 import com.ai_photo.R;
 import com.ai_photo.ui.login.LoginActivity;
+import com.ai_photo.util.AppMode;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Token check
         if (!AiPhotoApp.get().session().isLoggedIn()) {
             startActivity(new android.content.Intent(this, LoginActivity.class));
             finish();
@@ -30,11 +28,21 @@ public class MainActivity extends AppCompatActivity {
         NavController nav = host.getNavController();
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
-        NavigationUI.setupWithNavController(bottomNav, nav);
+        applyModeMenu(bottomNav, nav);
 
-        // Reselect on bottom nav -> pop to start of that tab's stack
         bottomNav.setOnItemReselectedListener(item -> {
             // No-op: default behavior of popping to start is sufficient
         });
+    }
+
+    public void applyModeMenu(BottomNavigationView bottomNav, NavController nav) {
+        AppMode mode = AppMode.current(this);
+        bottomNav.getMenu().clear();
+        if (mode == AppMode.NOTE) {
+            bottomNav.inflateMenu(R.menu.bottom_nav_note);
+        } else {
+            bottomNav.inflateMenu(R.menu.bottom_nav_photo);
+        }
+        NavigationUI.setupWithNavController(bottomNav, nav);
     }
 }

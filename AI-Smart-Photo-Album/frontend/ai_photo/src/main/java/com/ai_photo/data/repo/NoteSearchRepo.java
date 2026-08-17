@@ -1,9 +1,13 @@
 package com.ai_photo.data.repo;
-import com.ai_photo.data.model.note_search.*;
 
-// Stub — Task 15 wires Retrofit + ApiService methods.
+import com.ai_photo.data.api.RetrofitClient;
+import com.ai_photo.data.model.note_search.*;
+import com.ai_photo.util.Result;
+
 public class NoteSearchRepo {
-    public com.ai_photo.util.Result<SearchResponse> search(String query, String mode) {
-        throw new UnsupportedOperationException("NoteSearchRepo.search pending Task 15 ApiService wiring");
+    public Result<SearchResponse> search(String query, String mode) {
+        SearchRequest req = new SearchRequest();
+        req.query = query; req.mode = mode;
+        return RetrofitClient.exec(RetrofitClient.api().noteSearch(req));
     }
 }

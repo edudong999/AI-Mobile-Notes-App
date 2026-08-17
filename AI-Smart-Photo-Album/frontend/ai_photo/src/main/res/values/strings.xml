@@ -472,4 +472,13 @@
     <string name="toggle_back_login">返回登录</string>
     <string name="toggle_to_register">立即注册</string>
     <string name="msg_login_required">用户名和密码必填</string>
+
+    <!-- ====== 笔记模式导航 (Task 15) ====== -->
+    <string name="nav_notes">笔记</string>
+    <string name="nav_search">搜索</string>
+    <string name="nav_ai">AI</string>
+    <string name="nav_me">我的</string>
+    <string name="mode_switch_label">应用模式</string>
+    <string name="mode_note_label">笔记</string>
+    <string name="mode_photo_label">相册</string>
 </resources>

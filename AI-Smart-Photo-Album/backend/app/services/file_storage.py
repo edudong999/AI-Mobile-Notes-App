@@ -1,5 +1,6 @@
 """磁盘文件存储：原图、缩略图、URL 构造、哈希。"""
 import hashlib
+import os
 from pathlib import Path
 
 import aiofiles
@@ -46,3 +47,22 @@ async def save_bytes(path: Path, data: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     async with aiofiles.open(path, "wb") as f:
         await f.write(data)
+
+
+def note_data_dir() -> Path:
+    """笔记原图存储目录。"""
+    p = Path(settings.DATA_DIR) / "note_files"
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def note_thumbs_dir() -> Path:
+    """笔记缩略图存储目录。"""
+    p = Path(settings.DATA_DIR) / "note_thumbs"
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def note_origin_path(note_id: int, ext: str) -> Path:
+    """笔记原图磁盘路径，文件名带随机后缀避免冲突。"""
+    return note_data_dir() / f"{note_id}_{int.from_bytes(os.urandom(2), 'big')}.{ext.lstrip('.')}"

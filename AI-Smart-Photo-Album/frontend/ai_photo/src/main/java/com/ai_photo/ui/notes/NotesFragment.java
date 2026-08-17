@@ -86,7 +86,8 @@ public class NotesFragment extends Fragment {
         });
 
         swipe.setOnRefreshListener(this::refresh);
-        fab.setOnClickListener(v -> pickNoteImage.launch("image/*"));
+        fab.setOnClickListener(v ->
+            NavHostFragment.findNavController(this).navigate(R.id.action_to_capture));
 
         refresh();
     }

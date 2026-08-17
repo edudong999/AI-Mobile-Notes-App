@@ -506,4 +506,28 @@
     <string name="note_ai_diff_ai_label">AI 输出</string>
     <string name="note_ai_diff_accept">采用</string>
     <string name="note_ai_diff_reject">放弃</string>
+
+    <!-- ====== Task 19 - Capture / Folders / Questions ====== -->
+    <string name="capture_title_label">新建笔记</string>
+    <string name="capture_label_folder">选择文件夹</string>
+    <string name="capture_title_hint">笔记标题…</string>
+    <string name="capture_btn_pick">从相册</string>
+    <string name="capture_btn_camera">拍照</string>
+    <string name="capture_take_photo">拍照功能将在 Task 20 完善</string>
+    <string name="capture_pick_hint">尚未选择图片</string>
+    <string name="capture_picked_fmt">已选 %1$d 张图</string>
+    <string name="capture_title_required">请输入标题</string>
+    <string name="btn_save">保存</string>
+    <string name="btn_cancel">取消</string>
+    <string name="btn_delete">删除</string>
+
+    <string name="folder_manage_title">文件夹管理</string>
+    <string name="folder_create_title">新建文件夹</string>
+    <string name="folder_edit_title">编辑文件夹</string>
+    <string name="folder_delete_title">删除文件夹</string>
+    <string name="folder_delete_msg">确定删除 \"%1$s\"？笔记不会被删除。</string>
+    <string name="folder_name_hint">文件夹名…</string>
+
+    <string name="question_bank_title">题库</string>
+    <string name="questions_empty">还没有题目</string>
 </resources>

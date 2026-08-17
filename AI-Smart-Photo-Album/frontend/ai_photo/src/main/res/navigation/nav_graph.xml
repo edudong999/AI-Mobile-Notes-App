@@ -114,4 +114,36 @@
     <action
         android:id="@+id/action_to_note_detail"
         app:destination="@id/noteDetailFragment" />
+
+    <fragment
+        android:id="@+id/captureFragment"
+        android:name="com.ai_photo.ui.notes.CaptureFragment"
+        android:label="@string/capture_title_label"
+        tools:layout="@layout/fragment_capture" />
+
+    <fragment
+        android:id="@+id/folderManageFragment"
+        android:name="com.ai_photo.ui.folders.FolderManageFragment"
+        android:label="@string/folder_manage_title"
+        tools:layout="@layout/fragment_folder_manage" />
+
+    <fragment
+        android:id="@+id/questionBankFragment"
+        android:name="com.ai_photo.ui.notes.QuestionBankFragment"
+        android:label="@string/question_bank_title"
+        tools:layout="@layout/fragment_question_bank">
+        <argument android:name="noteId" app:argType="long" />
+    </fragment>
+
+    <action
+        android:id="@+id/action_to_capture"
+        app:destination="@id/captureFragment" />
+
+    <action
+        android:id="@+id/action_to_folder_manage"
+        app:destination="@id/folderManageFragment" />
+
+    <action
+        android:id="@+id/action_to_question_bank"
+        app:destination="@id/questionBankFragment" />
 </navigation>

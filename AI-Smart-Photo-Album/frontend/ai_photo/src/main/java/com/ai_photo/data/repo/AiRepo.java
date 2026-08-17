@@ -11,9 +11,14 @@ public class AiRepo {
         return RetrofitClient.exec(RetrofitClient.api().aiStatus());
     }
 
+    public Result<AiQueueResponse> queue() {
+        return RetrofitClient.exec(RetrofitClient.api().aiQueue());
+    }
+
     public Result<ReanalyzeResponse> reanalyze(List<Long> photoIds) {
         ReanalyzeRequest req = new ReanalyzeRequest();
         req.photoIds = photoIds;
         return RetrofitClient.exec(RetrofitClient.api().reanalyze(req));
     }
 }
+

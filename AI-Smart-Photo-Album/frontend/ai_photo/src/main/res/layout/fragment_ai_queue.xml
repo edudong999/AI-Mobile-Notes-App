@@ -5,34 +5,115 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <!-- 顶部状态汇总卡：4 色徽章 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/ai_bg_card_white_12"
+        android:padding="14dp"
+        android:layout_marginBottom="14dp">
+
+        <TextView
+            android:id="@+id/queue_total_summary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#1B1F2A"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="10dp" />
+
+        <!-- 进度条 -->
+        <ProgressBar
+            android:id="@+id/queue_progress_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:max="100"
+            android:progressDrawable="@drawable/ai_bg_progress_6dp"
+            android:layout_marginBottom="10dp" />
+
+        <!-- 4 个状态徽章行 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/badge_pending"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:background="@drawable/ai_bg_status_orange"
+                android:textColor="#FF8A33"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:id="@+id/badge_processing"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:background="@drawable/ai_bg_status_blue"
+                android:textColor="#4A90E2"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:id="@+id/badge_done"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:background="@drawable/ai_bg_status_green"
+                android:textColor="#1FBA82"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:id="@+id/badge_failed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:background="@drawable/ai_bg_status_red"
+                android:textColor="#E02020"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 队列照片列表 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/queue_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="8dp" />
+
+    <!-- 加载/空状态提示 -->
     <TextView
-        android:id="@+id/status_summary"
+        android:id="@+id/queue_empty"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
-
-    <ProgressBar
-        android:id="@+id/progress_bar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:max="100"
-        android:layout_marginBottom="16dp" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Note: queued tasks appear in backend AI worker log."
-        android:textColor="#666"
-        android:textSize="12sp"
-        android:layout_marginBottom="16dp" />
-
-    <Button
-        android:id="@+id/btn_refresh"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/btn_retry"
-        android:layout_marginBottom="8dp" />
+        android:gravity="center"
+        android:padding="24dp"
+        android:textColor="#7B8597"
+        android:textSize="13sp"
+        android:visibility="gone" />
 </LinearLayout>

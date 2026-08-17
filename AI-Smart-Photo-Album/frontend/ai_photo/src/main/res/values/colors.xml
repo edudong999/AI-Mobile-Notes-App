@@ -89,4 +89,10 @@
     <color name="status_pending">#FFC107</color>
     <color name="status_done">#4CAF50</color>
     <color name="status_failed">#F44336</color>
+
+    <!-- AI 队列 4 个徽章的前景文字色（与同名背景成对） -->
+    <color name="ai_status_pending_text">#FF8A33</color>
+    <color name="ai_status_processing_text">#4A90E2</color>
+    <color name="ai_status_done_text">#1FBA82</color>
+    <color name="ai_status_failed_text">#E02020</color>
 </resources>

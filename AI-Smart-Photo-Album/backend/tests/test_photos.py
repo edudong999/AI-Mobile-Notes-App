@@ -9,8 +9,9 @@ from app.database import AsyncSessionLocal
 from app.models import Category, CategoryType, Photo, PhotoCategory
 
 
-def make_jpeg_bytes() -> bytes:
-    img = Image.new("RGB", (640, 480), color=(120, 80, 200))
+def make_jpeg_bytes(color: tuple[int, int, int] = (120, 80, 200)) -> bytes:
+    """生成测试用 JPEG bytes；可通过 color 参数让多次调用产生不同文件以绕过上传去重。"""
+    img = Image.new("RGB", (640, 480), color=color)
     buf = io.BytesIO()
     img.save(buf, "JPEG")
     return buf.getvalue()
@@ -32,7 +33,7 @@ async def test_upload_and_detail(client, registered_user):
 
 @pytest.mark.asyncio
 async def test_list_photos(client, registered_user):
-    files = [("files", (f"p{i}.jpg", make_jpeg_bytes(), "image/jpeg")) for i in range(3)]
+    files = [("files", (f"p{i}.jpg", make_jpeg_bytes(color=(i * 30, i * 40, i * 50)), "image/jpeg")) for i in range(3)]
     await client.post("/api/v1/photos/upload", files=files)
     r = await client.get("/api/v1/photos?page=1&pageSize=10")
     assert r.json()["code"] == 200
@@ -100,7 +101,7 @@ async def test_filter_single_scene_id(client, registered_user):
     cats = await _pick_categories()
     scene_id = cats[CategoryType.scene]
 
-    files = [("files", (f"s{i}.jpg", make_jpeg_bytes(), "image/jpeg")) for i in range(3)]
+    files = [("files", (f"s{i}.jpg", make_jpeg_bytes(color=(100 + i, 50 + i, 200 - i)), "image/jpeg")) for i in range(3)]
     r = await client.post("/api/v1/photos/upload", files=files)
     pids = [item["photoId"] for item in r.json()["data"]["uploadedPhotos"]]
     await _seed_photo_categories(registered_user["userId"], pids[0], [scene_id])
@@ -124,7 +125,7 @@ async def test_filter_cross_type_and_semantics(client, registered_user):
     scene_id = cats[CategoryType.scene]
     emotion_id = cats[CategoryType.emotion]
 
-    files = [("files", (f"x{i}.jpg", make_jpeg_bytes(), "image/jpeg")) for i in range(3)]
+    files = [("files", (f"x{i}.jpg", make_jpeg_bytes(color=(10 + i, 200 - i, 30 + i)), "image/jpeg")) for i in range(3)]
     r = await client.post("/api/v1/photos/upload", files=files)
     pids = [item["photoId"] for item in r.json()["data"]["uploadedPhotos"]]
     # pids[0]: 只 scene；pids[1]: scene + emotion；pids[2]: 只 emotion

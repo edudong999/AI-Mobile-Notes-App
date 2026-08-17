@@ -17,16 +17,14 @@ import com.ai_photo.R;
 import com.ai_photo.data.model.photo.PhotoListItem;
 import com.ai_photo.data.model.photo.PhotoListResponse;
 import com.ai_photo.data.repo.PhotoRepo;
+import com.ai_photo.util.BgExecutor;
 import com.ai_photo.util.Result;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class PhotoListFragment extends Fragment {
     private PhotoRepo repo = new PhotoRepo();
-    private ExecutorService exec = Executors.newSingleThreadExecutor();
     private RecyclerView recycler;
     private SwipeRefreshLayout swipe;
     private PhotoAdapter adapter;
@@ -55,11 +53,17 @@ public class PhotoListFragment extends Fragment {
                 NavHostFragment.findNavController(this)
                     .navigate(R.id.action_to_detail, args);
             },
-            item -> exec.execute(() -> {
+            item -> BgExecutor.execute(() -> {
                 Result<?> r = item.isFavorite
                     ? repo.unfavorite(item.photoId)
                     : repo.favorite(item.photoId);
-                if (r instanceof Result.Success) refresh();
+                if (!(r instanceof Result.Success)) return;
+                final android.app.Activity a = getActivity();
+                if (a == null || a.isDestroyed()) return;
+                a.runOnUiThread(() -> {
+                    if (getView() == null) return;
+                    refresh();
+                });
             })
         );
         recycler.setLayoutManager(new GridLayoutManager(getContext(), 3));
@@ -71,17 +75,13 @@ public class PhotoListFragment extends Fragment {
         refresh();
     }
 
-    @Override public void onDestroyView() {
-        super.onDestroyView();
-        exec.shutdown();
-    }
-
+    @SuppressWarnings("unchecked")
     private void refresh() {
         swipe.setRefreshing(true);
-        exec.execute(() -> {
+        BgExecutor.execute(() -> {
             Result<?> r = repo.list(1, 60);
             final android.app.Activity a = getActivity();
-            if (a == null) return;
+            if (a == null || a.isDestroyed()) return;
             a.runOnUiThread(() -> {
                 if (getView() == null) return;
                 swipe.setRefreshing(false);
@@ -100,10 +100,10 @@ public class PhotoListFragment extends Fragment {
 
     private void doUpload(List<Uri> uris) {
         swipe.setRefreshing(true);
-        exec.execute(() -> {
+        BgExecutor.execute(() -> {
             Result<?> r = repo.uploadFromUris(getContext(), uris);
             final android.app.Activity a = getActivity();
-            if (a == null) return;
+            if (a == null || a.isDestroyed()) return;
             a.runOnUiThread(() -> {
                 if (getView() == null) return;
                 swipe.setRefreshing(false);

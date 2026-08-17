@@ -18,14 +18,14 @@
             android:id="@+id/btn_create"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="New" />
+            android:text="@string/admin_btn_new" />
     </LinearLayout>
 
     <Button
         android:id="@+id/btn_reset"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Reset all to seed"
+        android:text="@string/admin_btn_reset_all"
         android:layout_marginTop="8dp" />
 
     <androidx.recyclerview.widget.RecyclerView

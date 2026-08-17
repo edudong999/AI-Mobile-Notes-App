@@ -25,7 +25,7 @@ public class AdminCategoryAdapter extends RecyclerView.Adapter<AdminCategoryAdap
 
     public void submit(List<AdminCategoryItem> data) {
         items.clear();
-        items.addAll(data);
+        if (data != null) items.addAll(data);
         notifyDataSetChanged();
     }
 

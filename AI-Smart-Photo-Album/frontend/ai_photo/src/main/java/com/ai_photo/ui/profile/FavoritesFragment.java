@@ -13,24 +13,17 @@ import com.ai_photo.data.api.RetrofitClient;
 import com.ai_photo.data.model.photo.FavoriteResponse;
 import com.ai_photo.data.model.photo.PhotoListItem;
 import com.ai_photo.ui.photos.PhotoAdapter;
+import com.ai_photo.util.BgExecutor;
 import com.ai_photo.util.Result;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class FavoritesFragment extends Fragment {
-    private ExecutorService exec = Executors.newSingleThreadExecutor();
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup container, @Nullable Bundle b) {
         return inflater.inflate(R.layout.fragment_favorites, container, false);
-    }
-
-    @Override public void onDestroyView() {
-        super.onDestroyView();
-        exec.shutdown();
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle b) {
@@ -48,14 +41,17 @@ public class FavoritesFragment extends Fragment {
         recycler.setLayoutManager(new GridLayoutManager(getContext(), 3));
         recycler.setAdapter(adapter);
 
-        exec.execute(() -> {
+        BgExecutor.execute(() -> {
             Result<?> r = RetrofitClient.exec(RetrofitClient.api().favorites(1, 60));
             final android.app.Activity a = getActivity();
-            if (a == null) return;
+            if (a == null || a.isDestroyed()) return;
             a.runOnUiThread(() -> {
+                if (getView() == null) return;
                 if (r instanceof Result.Success) {
                     FavoriteResponse data = (FavoriteResponse) ((Result.Success<?>) r).data;
-                    List<PhotoListItem> items = data.list.stream().map(f -> {
+                    List<com.ai_photo.data.model.photo.FavoriteItem> src =
+                        data != null && data.list != null ? data.list : java.util.Collections.emptyList();
+                    List<PhotoListItem> items = src.stream().map(f -> {
                         PhotoListItem it = new PhotoListItem();
                         it.photoId = f.photoId;
                         it.thumbnailUrl = f.thumbnailUrl;
@@ -64,7 +60,8 @@ public class FavoritesFragment extends Fragment {
                     }).collect(Collectors.toList());
                     adapter.submit(items);
                 } else if (r instanceof Result.Error) {
-                    Toast.makeText(getContext(), ((Result.Error<?>) r).message, Toast.LENGTH_SHORT).show();
+                    android.content.Context ctx = getContext();
+                    if (ctx != null) Toast.makeText(ctx, ((Result.Error<?>) r).message, Toast.LENGTH_SHORT).show();
                 }
             });
         });

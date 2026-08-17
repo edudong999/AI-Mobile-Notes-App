@@ -12,14 +12,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.ai_photo.R;
 import com.ai_photo.data.model.admin.AdminCategoryItem;
 import com.ai_photo.data.repo.AdminRepo;
+import com.ai_photo.util.BgExecutor;
 import com.ai_photo.util.Result;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class AdminCategoryFragment extends Fragment {
     private AdminRepo repo = new AdminRepo();
-    private ExecutorService exec = Executors.newSingleThreadExecutor();
     private AdminCategoryAdapter adapter;
     private String currentType = "tag";
     private static final String[] TYPES = {"scene", "emotion", "tag"};
@@ -55,18 +52,19 @@ public class AdminCategoryFragment extends Fragment {
 
     @Override public void onDestroyView() {
         super.onDestroyView();
-        exec.shutdown();
     }
 
     private void load() {
-        exec.execute(() -> {
+        BgExecutor.execute(() -> {
             Result<?> r = repo.list(currentType);
             final android.app.Activity a = getActivity();
-            if (a == null) return;
+            if (a == null || a.isDestroyed()) return;
             a.runOnUiThread(() -> {
+                if (getView() == null) return;
                 if (r instanceof Result.Success) {
-                    adapter.submit(((com.ai_photo.data.model.admin.AdminCategoryListResponse)
-                        ((Result.Success<?>) r).data).list);
+                    com.ai_photo.data.model.admin.AdminCategoryListResponse data =
+                        (com.ai_photo.data.model.admin.AdminCategoryListResponse) ((Result.Success<?>) r).data;
+                    adapter.submit(data != null ? data.list : null);
                 }
             });
         });
@@ -74,24 +72,25 @@ public class AdminCategoryFragment extends Fragment {
 
     private void showCreateDialog() {
         final EditText input = new EditText(getContext());
-        input.setHint("category name");
+        input.setHint(R.string.admin_dialog_create_hint);
         new AlertDialog.Builder(getContext())
-            .setTitle("Create " + currentType)
+            .setTitle(getString(R.string.admin_dialog_create_title, currentType))
             .setView(input)
-            .setPositiveButton("Create", (d, w) -> {
+            .setPositiveButton(R.string.admin_btn_create, (d, w) -> {
                 String name = input.getText().toString().trim();
                 if (name.isEmpty()) return;
-                exec.execute(() -> {
+                BgExecutor.execute(() -> {
                     Result<?> r = repo.create(currentType, name, null);
                     final android.app.Activity a = getActivity();
-                    if (a == null) return;
+                    if (a == null || a.isDestroyed()) return;
                     a.runOnUiThread(() -> {
+                        if (getView() == null) return;
                         if (r instanceof Result.Success) load();
                         else if (r instanceof Result.Error) toast(((Result.Error<?>) r).message);
                     });
                 });
             })
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.admin_btn_cancel, null)
             .show();
     }
 
@@ -99,59 +98,63 @@ public class AdminCategoryFragment extends Fragment {
         final EditText input = new EditText(getContext());
         input.setText(item.name);
         new AlertDialog.Builder(getContext())
-            .setTitle("Rename")
+            .setTitle(R.string.admin_dialog_rename_title)
             .setView(input)
-            .setPositiveButton("Save", (d, w) -> {
+            .setPositiveButton(R.string.admin_btn_save, (d, w) -> {
                 String name = input.getText().toString().trim();
                 if (name.isEmpty()) return;
-                exec.execute(() -> {
+                BgExecutor.execute(() -> {
                     Result<?> r = repo.update(item.categoryId, name, null);
                     final android.app.Activity a = getActivity();
-                    if (a == null) return;
+                    if (a == null || a.isDestroyed()) return;
                     a.runOnUiThread(() -> {
+                        if (getView() == null) return;
                         if (r instanceof Result.Success) load();
                         else if (r instanceof Result.Error) toast(((Result.Error<?>) r).message);
                     });
                 });
             })
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.admin_btn_cancel, null)
             .show();
     }
 
     private void confirmDelete(AdminCategoryItem item) {
         new AlertDialog.Builder(getContext())
-            .setTitle("Delete " + item.name + "?")
-            .setPositiveButton("Delete", (d, w) -> exec.execute(() -> {
+            .setTitle(getString(R.string.admin_dialog_delete_title, item.name))
+            .setPositiveButton(R.string.admin_btn_delete, (d, w) -> BgExecutor.execute(() -> {
                 Result<?> r = repo.delete(item.categoryId);
                 final android.app.Activity a = getActivity();
-                if (a == null) return;
+                if (a == null || a.isDestroyed()) return;
                 a.runOnUiThread(() -> {
+                    if (getView() == null) return;
                     if (r instanceof Result.Success) load();
                     else if (r instanceof Result.Error) toast(((Result.Error<?>) r).message);
                 });
             }))
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.admin_btn_cancel, null)
             .show();
     }
 
     private void confirmReset() {
         new AlertDialog.Builder(getContext())
-            .setTitle("Reset all categories?")
-            .setMessage("Removes all custom categories and re-seeds the 60 defaults.")
-            .setPositiveButton("Reset", (d, w) -> exec.execute(() -> {
+            .setTitle(R.string.admin_dialog_reset_title)
+            .setMessage(R.string.admin_dialog_reset_message)
+            .setPositiveButton(R.string.admin_btn_reset, (d, w) -> BgExecutor.execute(() -> {
                 Result<?> r = repo.reset();
                 final android.app.Activity a = getActivity();
-                if (a == null) return;
+                if (a == null || a.isDestroyed()) return;
                 a.runOnUiThread(() -> {
+                    if (getView() == null) return;
                     if (r instanceof Result.Success) load();
                     else if (r instanceof Result.Error) toast(((Result.Error<?>) r).message);
                 });
             }))
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.admin_btn_cancel, null)
             .show();
     }
 
     private void toast(String msg) {
-        Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+        android.content.Context ctx = getContext();
+        if (ctx != null && msg != null) Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show();
     }
 }

@@ -1,8 +1,8 @@
 package com.ai_photo.data.model.user;
 
 public class StatisticsResponse {
-    public int totalPhotos;
-    public int analyzedPhotos;
-    public int favoriteCount;
+    public Integer totalPhotos;
+    public Integer analyzedPhotos;
+    public Integer favoriteCount;
     public CategoryDistribution categoryDistribution;
 }

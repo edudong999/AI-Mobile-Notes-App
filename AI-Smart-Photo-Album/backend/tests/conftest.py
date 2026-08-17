@@ -2,6 +2,7 @@
 import asyncio
 import os
 import shutil
+import uuid
 from pathlib import Path
 
 import pytest
@@ -10,19 +11,27 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # 测试环境：覆盖 settings，再 import app
+# 用文件型 SQLite 而非 :memory:，因为 :memory: 在多个 engine/connection 之间
+# 各自独立（每个连接拿到的都是空库），文件型才能让 conftest 的 engine 与
+# database.py 的全局 engine 看到同一份数据。
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
-    "mysql+asyncmy://root:password@127.0.0.1:3306/ai_album_test",
+    "sqlite+aiosqlite:///./tests/_data/album_test.db",
 )
 TEST_DATA_DIR = "./tests/_data"
+
+# ⚠️ 必须在模块顶层设置 env，不能放到 fixture 里——否则 test 文件
+# 顶层的 `from app.database import ...` 会先于 fixture 执行，拿到默认 DB，
+# 导致 conftest 的 engine（test DB）与 app.database 的 engine（默认 DB）
+# 指向不同文件，seed 与查询互相看不到。
+os.environ["DATABASE_URL"] = TEST_DB_URL
+os.environ["DATA_DIR"] = TEST_DATA_DIR
+os.environ["JWT_SECRET"] = "test-secret"
+Path(TEST_DATA_DIR).mkdir(parents=True, exist_ok=True)
 
 
 @pytest.fixture(scope="session", autouse=True)
 def _setup_env():
-    os.environ["DATABASE_URL"] = TEST_DB_URL
-    os.environ["DATA_DIR"] = TEST_DATA_DIR
-    os.environ["JWT_SECRET"] = "test-secret"
-    Path(TEST_DATA_DIR).mkdir(parents=True, exist_ok=True)
     yield
     if Path(TEST_DATA_DIR).exists():
         shutil.rmtree(TEST_DATA_DIR, ignore_errors=True)
@@ -35,16 +44,19 @@ async def engine(_setup_env):
     await eng.dispose()
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(autouse=True)
 async def _prepare_db(engine):
-    from app.database import Base
+    """每个测试前重置数据库（drop_all + create_all + seed）。
+
+    SQLite + AUTORANDOM 会让 PK 在 DELETE 后继续递增，所以这里用 drop/create
+    而不是 DELETE，确保 category_id 等关键字段始终是 1-60。
+    """
+    from app.database import Base, run_sql_file
     import app.models  # noqa: F401 触发模型注册
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-
-    from app.database import run_sql_file
     await run_sql_file("migrations/002_seed_categories.sql")
     yield
 
@@ -66,13 +78,17 @@ async def client():
 
 @pytest_asyncio.fixture
 async def registered_user(client):
+    """每次测试创建独立用户（用户名加 uuid 避免冲突）。"""
+    suffix = uuid.uuid4().hex[:8]
+    username = f"alice-{suffix}"
+    email = f"alice-{suffix}@example.com"
     resp = await client.post("/api/v1/auth/register", json={
-        "username": "alice",
+        "username": username,
         "password": "secret123",
-        "email": "alice@example.com",
+        "email": email,
     })
     assert resp.status_code == 200, resp.text
-    login = await client.post("/api/v1/auth/login", json={"username": "alice", "password": "secret123"})
+    login = await client.post("/api/v1/auth/login", json={"username": username, "password": "secret123"})
     token = login.json()["data"]["token"]
     client.headers["Authorization"] = f"Bearer {token}"
-    return {"token": token, "userId": login.json()["data"]["userId"]}
+    return {"token": token, "userId": login.json()["data"]["userId"], "username": username}

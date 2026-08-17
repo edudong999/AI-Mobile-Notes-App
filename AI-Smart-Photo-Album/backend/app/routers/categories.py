@@ -40,7 +40,7 @@ async def preview(
         by_type[c.type.value].append(c)
 
     counts = await category_service.count_photos_by_category(
-        db, [c.category_id for c in all_cats]
+        db, [c.category_id for c in all_cats], user_id=user.user_id
     )
 
     items: dict[str, list[CategoryPreviewItem]] = {t.value: [] for t in CategoryType}
@@ -69,7 +69,7 @@ async def list_categories(
     """按 type 列出分类及其封面照片。"""
     type_enum = _parse_type(type)
     cats = await category_service.list_by_type(db, type_enum)
-    counts = await category_service.count_photos_by_category(db, [c.category_id for c in cats])
+    counts = await category_service.count_photos_by_category(db, [c.category_id for c in cats], user_id=_user.user_id)
     items = []
     for c in cats:
         items.append({

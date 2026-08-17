@@ -9,8 +9,8 @@
         android:id="@+id/tabs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-        <com.google.android.material.tabs.TabItem android:text="Search" />
-        <com.google.android.material.tabs.TabItem android:text="Filter" />
+        <com.google.android.material.tabs.TabItem android:text="@string/search_tab_query" />
+        <com.google.android.material.tabs.TabItem android:text="@string/search_tab_filter" />
     </com.google.android.material.tabs.TabLayout>
 
     <!-- Search mode panel -->
@@ -25,12 +25,12 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="natural language query" />
+            android:hint="@string/search_query_hint" />
         <Button
             android:id="@+id/btn_go"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Go" />
+            android:text="@string/search_go" />
     </LinearLayout>
 
     <!-- Filter mode panel -->
@@ -60,7 +60,7 @@
             android:id="@+id/btn_filter"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Apply filter" />
+            android:text="@string/search_apply_filter" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView

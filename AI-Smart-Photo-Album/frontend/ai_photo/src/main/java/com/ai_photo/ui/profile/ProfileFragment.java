@@ -13,23 +13,15 @@ import com.ai_photo.data.api.RetrofitClient;
 import com.ai_photo.data.model.user.UserMeResponse;
 import com.ai_photo.data.repo.AuthRepo;
 import com.ai_photo.ui.login.LoginActivity;
+import com.ai_photo.util.BgExecutor;
 import com.ai_photo.util.Result;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class ProfileFragment extends Fragment {
     private AuthRepo authRepo = new AuthRepo();
-    private ExecutorService exec = Executors.newSingleThreadExecutor();
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup container, @Nullable Bundle b) {
         return inflater.inflate(R.layout.fragment_profile, container, false);
-    }
-
-    @Override public void onDestroyView() {
-        super.onDestroyView();
-        exec.shutdown();
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle b) {
@@ -42,31 +34,36 @@ public class ProfileFragment extends Fragment {
             NavHostFragment.findNavController(this).navigate(R.id.action_to_admin));
         view.findViewById(R.id.btn_logout).setOnClickListener(v -> doLogout());
 
-        exec.execute(() -> {
+        BgExecutor.execute(() -> {
             Result<?> r = RetrofitClient.exec(RetrofitClient.api().me());
             final android.app.Activity a = getActivity();
-            if (a == null) return;
+            if (a == null || a.isDestroyed()) return;
             a.runOnUiThread(() -> {
                 View v = getView();
                 if (v == null) return;
                 if (r instanceof Result.Success) {
                     UserMeResponse u = (UserMeResponse) ((Result.Success<?>) r).data;
-                    ((android.widget.TextView) v.findViewById(R.id.username)).setText(u.username);
-                    ((android.widget.TextView) v.findViewById(R.id.email)).setText(u.email);
-                    ((android.widget.TextView) v.findViewById(R.id.created_at)).setText(u.createdAt);
+                    if (u == null) return;
+                    ((android.widget.TextView) v.findViewById(R.id.username)).setText(
+                        u.username != null ? u.username : "");
+                    ((android.widget.TextView) v.findViewById(R.id.email)).setText(
+                        u.email != null ? u.email : "");
+                    ((android.widget.TextView) v.findViewById(R.id.created_at)).setText(
+                        u.createdAt != null ? u.createdAt : "");
                 }
             });
         });
     }
 
     private void doLogout() {
-        exec.execute(() -> {
+        BgExecutor.execute(() -> {
             authRepo.logout();
             final android.app.Activity a = getActivity();
-            if (a == null) return;
+            if (a == null || a.isDestroyed()) return;
             a.runOnUiThread(() -> {
-                Toast.makeText(getContext(), R.string.msg_logout_ok, Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(getContext(), LoginActivity.class));
+                if (a.isFinishing()) return;
+                Toast.makeText(a, R.string.msg_logout_ok, Toast.LENGTH_SHORT).show();
+                a.startActivity(new Intent(a, LoginActivity.class));
                 a.finishAffinity();
             });
         });

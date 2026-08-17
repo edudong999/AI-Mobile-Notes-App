@@ -12,9 +12,12 @@ import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import okio.BufferedSink;
 
 public class PhotoRepo {
 
@@ -30,7 +33,11 @@ public class PhotoRepo {
                 String ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime);
                 if (ext == null) ext = "jpg";
                 String filename = "upload_" + System.currentTimeMillis() + "." + ext;
-                RequestBody rb = RequestBody.create(mt, bytes);
+                RequestBody rb = new RequestBody() {
+                    @Override public MediaType contentType() { return mt; }
+                    @Override public long contentLength() { return bytes.length; }
+                    @Override public void writeTo(BufferedSink sink) throws IOException { sink.write(bytes); }
+                };
                 parts.add(MultipartBody.Part.createFormData("files", filename, rb));
             } catch (Exception e) {
                 return Result.net(e);

@@ -27,19 +27,19 @@
         android:id="@+id/btn_favorites"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Favorites"
+        android:text="@string/profile_btn_favorites"
         android:layout_marginTop="32dp" />
     <Button
         android:id="@+id/btn_statistics"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Statistics"
+        android:text="@string/profile_btn_statistics"
         android:layout_marginTop="8dp" />
     <Button
         android:id="@+id/btn_admin"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Admin Categories"
+        android:text="@string/profile_btn_admin"
         android:layout_marginTop="8dp" />
     <Button
         android:id="@+id/btn_logout"

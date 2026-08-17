@@ -28,16 +28,22 @@ async def get_or_404(db: AsyncSession, category_id: int) -> Category:
 
 
 async def count_photos_by_category(
-    db: AsyncSession, category_ids: list[int]
+    db: AsyncSession, category_ids: list[int], user_id: int | None = None
 ) -> dict[int, int]:
-    """返回 {category_id: photo_count}；空入参直接返回 {}。"""
+    """返回 {category_id: photo_count}；空入参直接返回 {}。
+
+    user_id 非空时只统计该用户的照片（避免跨用户串数）。
+    """
     if not category_ids:
         return {}
-    rows = (await db.execute(
-        select(PhotoCategory.category_id, func.count(PhotoCategory.photo_id))
-        .where(PhotoCategory.category_id.in_(category_ids))
-        .group_by(PhotoCategory.category_id)
-    )).all()
+    stmt = select(PhotoCategory.category_id, func.count(PhotoCategory.photo_id))
+    if user_id is not None:
+        stmt = stmt.join(Photo, PhotoCategory.photo_id == Photo.photo_id).where(
+            Photo.user_id == user_id,
+            Photo.deleted_at.is_(None),
+        )
+    stmt = stmt.where(PhotoCategory.category_id.in_(category_ids)).group_by(PhotoCategory.category_id)
+    rows = (await db.execute(stmt)).all()
     return dict(rows)
 
 

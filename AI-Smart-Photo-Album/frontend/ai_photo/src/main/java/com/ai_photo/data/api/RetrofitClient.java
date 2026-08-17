@@ -38,7 +38,9 @@ public final class RetrofitClient {
             if (env == null) return Result.err(-1, "Empty response");
             if (env.code == 200) return Result.ok(env.data);
             return Result.err(env.code, env.message != null ? env.message : "Biz error");
-        } catch (IOException e) {
+        } catch (IOException | com.google.gson.JsonSyntaxException e) {
+            return Result.net(e);
+        } catch (RuntimeException e) {
             return Result.net(e);
         }
     }

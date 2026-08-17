@@ -8,19 +8,27 @@ import com.bumptech.glide.Glide;
 public final class GlideUtil {
     private GlideUtil() {}
 
-    /** Load thumbnail. URL is absolute (e.g., http://10.0.2.2:8000/static/thumb/123.webp). */
+    /** Load thumbnail. Accepts absolute URL or server-relative path (/static/...). */
     public static void loadThumb(ImageView view, String url) {
-        Glide.with(view.getContext())
-            .load(url)
-            .placeholder(R.color.category_tag)
-            .into(view);
+        load(view, url, R.color.category_tag);
     }
 
     /** Load original full-size photo. */
     public static void loadOriginal(ImageView view, String url) {
-        Glide.with(view.getContext())
-            .load(url)
-            .placeholder(R.color.status_pending)
+        load(view, url, R.color.status_pending);
+    }
+
+    private static void load(ImageView view, String url, int placeholderRes) {
+        if (view == null || url == null || url.isEmpty()) {
+            if (view != null) view.setImageResource(placeholderRes);
+            return;
+        }
+        String absolute = url.startsWith("http://") || url.startsWith("https://")
+            ? url
+            : Config.BASE_URL.replaceAll("/$", "") + (url.startsWith("/") ? url : "/" + url);
+        Glide.with(view.getContext().getApplicationContext())
+            .load(absolute)
+            .placeholder(placeholderRes)
             .into(view);
     }
 }

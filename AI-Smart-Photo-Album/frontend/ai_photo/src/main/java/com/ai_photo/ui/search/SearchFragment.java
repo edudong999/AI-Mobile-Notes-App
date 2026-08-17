@@ -14,18 +14,16 @@ import com.ai_photo.data.model.category.*;
 import com.ai_photo.data.model.photo.SearchItem;
 import com.ai_photo.data.repo.CategoryRepo;
 import com.ai_photo.data.repo.PhotoRepo;
+import com.ai_photo.util.BgExecutor;
 import com.ai_photo.util.Result;
 import com.google.android.material.tabs.TabLayout;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class SearchFragment extends Fragment {
     private PhotoRepo photoRepo = new PhotoRepo();
     private CategoryRepo categoryRepo = new CategoryRepo();
-    private ExecutorService exec = Executors.newSingleThreadExecutor();
 
     private SearchResultAdapter adapter;
     private RecyclerView recycler;
@@ -40,11 +38,6 @@ public class SearchFragment extends Fragment {
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup container, @Nullable Bundle b) {
         return inflater.inflate(R.layout.fragment_search, container, false);
-    }
-
-    @Override public void onDestroyView() {
-        super.onDestroyView();
-        exec.shutdown();
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle b) {
@@ -79,7 +72,7 @@ public class SearchFragment extends Fragment {
     }
 
     private void loadCategorySpinners() {
-        exec.execute(() -> {
+        BgExecutor.execute(() -> {
             // Load all three types
             Map<String, Long> s = loadOne("scene");
             Map<String, Long> e = loadOne("emotion");
@@ -100,7 +93,8 @@ public class SearchFragment extends Fragment {
         Result<?> r = categoryRepo.list(type);
         if (r instanceof Result.Success) {
             CategoryListResponse data = (CategoryListResponse) ((Result.Success<?>) r).data;
-            return data.list.stream().collect(Collectors.toMap(
+            List<CategoryListItem> src = data != null && data.list != null ? data.list : java.util.Collections.emptyList();
+            return src.stream().collect(Collectors.toMap(
                 c -> c.categoryName, c -> c.categoryId, (a, b) -> a, LinkedHashMap::new));
         }
         return new LinkedHashMap<>();
@@ -108,18 +102,22 @@ public class SearchFragment extends Fragment {
 
     private ArrayAdapter<String> spinnerAdapter(java.util.Set<String> items) {
         List<String> list = new ArrayList<>();
-        list.add("(none)");
+        list.add(getString(R.string.search_none_option));
         list.addAll(items);
         return new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_item, list);
     }
 
     private void doSearch() {
         String q = query.getText().toString().trim();
-        if (q.isEmpty()) { Toast.makeText(getContext(), "query empty", Toast.LENGTH_SHORT).show(); return; }
-        exec.execute(() -> {
+        if (q.isEmpty()) {
+            android.content.Context ctx = getContext();
+            if (ctx != null) Toast.makeText(ctx, R.string.msg_query_empty, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        BgExecutor.execute(() -> {
             Result<?> r = photoRepo.search(q, 1, 30);
             final Activity a = getActivity();
-            if (a == null) return;
+            if (a == null || a.isDestroyed()) return;
             a.runOnUiThread(() -> showResults(r));
         });
     }
@@ -129,34 +127,45 @@ public class SearchFragment extends Fragment {
         Long eId = pickId(emotionSpinner, emotionMap);
         Long tId = pickId(tagSpinner, tagMap);
         if (sId == null && eId == null && tId == null) {
-            Toast.makeText(getContext(), "select at least one", Toast.LENGTH_SHORT).show();
+            android.content.Context ctx = getContext();
+            if (ctx != null) Toast.makeText(ctx, R.string.msg_select_at_least_one, Toast.LENGTH_SHORT).show();
             return;
         }
-        exec.execute(() -> {
+        BgExecutor.execute(() -> {
             Result<?> r = photoRepo.filter(sId, eId, tId, 1, 30);
             final Activity a = getActivity();
-            if (a == null) return;
+            if (a == null || a.isDestroyed()) return;
             a.runOnUiThread(() -> showResults(r));
         });
     }
 
     private Long pickId(Spinner spinner, Map<String, Long> map) {
         String name = (String) spinner.getSelectedItem();
-        if (name == null || "(none)".equals(name)) return null;
+        if (name == null || getString(R.string.search_none_option).equals(name)) return null;
         return map.get(name);
     }
 
+    @SuppressWarnings("unchecked")
     private void showResults(Result<?> r) {
+        if (getView() == null) return;
         if (r instanceof Result.Success) {
-            List<SearchItem> items = (List<SearchItem>) ((Result.Success<?>) r).data.getClass()
-                .equals(com.ai_photo.data.model.photo.SearchResponse.class)
-                ? ((com.ai_photo.data.model.photo.SearchResponse) ((Result.Success<?>) r).data).list
-                : new ArrayList<>();
+            Object data = ((Result.Success<?>) r).data;
+            List<SearchItem> items;
+            if (data instanceof com.ai_photo.data.model.photo.SearchResponse) {
+                items = ((com.ai_photo.data.model.photo.SearchResponse) data).list;
+            } else if (data instanceof java.util.List) {
+                items = (List<SearchItem>) data;
+            } else {
+                items = new ArrayList<>();
+            }
+            if (items == null) items = new ArrayList<>();
             adapter.submit(items);
         } else if (r instanceof Result.Error) {
-            Toast.makeText(getContext(), ((Result.Error<?>) r).message, Toast.LENGTH_SHORT).show();
+            android.content.Context ctx = getContext();
+            if (ctx != null) Toast.makeText(ctx, ((Result.Error<?>) r).message, Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(getContext(), R.string.msg_network_err, Toast.LENGTH_SHORT).show();
+            android.content.Context ctx = getContext();
+            if (ctx != null) Toast.makeText(ctx, R.string.msg_network_err, Toast.LENGTH_SHORT).show();
         }
     }
 }

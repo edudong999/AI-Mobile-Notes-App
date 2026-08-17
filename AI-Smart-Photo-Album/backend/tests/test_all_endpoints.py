@@ -1,6 +1,6 @@
 """全量接口契约对照测试。
 
-对比 docs/interface.md (v1.1) 中声明的全部 26 个接口：
+对比 docs/interface.md 中声明的全部接口（当前 27 个）：
   1) 通过 OpenAPI schema 校验每个接口是否注册 + method + path；
   2) 通过 Pydantic schema / 路由返回值静态校验 *响应字段*；
   3) 必要时跑最小可用的端到端用例，确认运行时字段。
@@ -27,7 +27,7 @@ Path(TEST_DATA_DIR).mkdir(parents=True, exist_ok=True)
 
 
 # ============================================================================
-#  A. 静态契约对照：26 个接口路径 + 字段名
+#  A. 静态契约对照：27 个接口路径 + 字段名
 # ============================================================================
 
 # 从 interface.md 二、接口汇总表 抄下来的全部 (method, path_template)
@@ -48,6 +48,7 @@ EXPECTED_ROUTES: list[tuple[str, str]] = [
     ("POST",   "/api/v1/photos/{photo_id}/favorite"),
     ("DELETE", "/api/v1/photos/{photo_id}/favorite"),
     ("POST",   "/api/v1/photos/search"),
+    ("POST",   "/api/v1/photos/filter"),
     ("GET",    "/api/v1/categories/preview"),
     ("GET",    "/api/v1/categories"),
     ("GET",    "/api/v1/categories/{category_id}/photos"),
@@ -215,10 +216,10 @@ async def registered_user(client):
 
 
 # ============================================================================
-#  C. 静态测试：26 接口注册 + OpenAPI 参数 / 响应 schema
+#  C. 静态测试：27 接口注册 + OpenAPI 参数 / 响应 schema
 # ============================================================================
 
-def test_openapi_lists_all_26_routes():
+def test_openapi_lists_all_27_routes():
     """断言 OpenAPI 中注册的接口与 EXPECTED_ROUTES 完全一致。"""
     from app.main import app
     schema = app.openapi()
@@ -238,7 +239,7 @@ def test_openapi_lists_all_26_routes():
         if extra:
             MISMATCHES.append(f"[routes.extra] {sorted(extra)}")
         pytest.fail(f"接口注册不匹配，missing={missing}, extra={extra}")
-    assert len(seen) == 26, f"期望 26，实际 {len(seen)}"
+    assert len(seen) == 27, f"期望 27，实际 {len(seen)}"
 
 
 def test_openapi_request_schemas_have_required_fields():
@@ -503,6 +504,14 @@ async def test_runtime_photos_search_empty(client, registered_user):
     assert_match("photos.search.empty.code", 400, j0.get("code"))
 
 
+@pytest.mark.asyncio
+async def test_runtime_photos_filter_all_none(client, registered_user):
+    """3.11 筛选：sceneId/emotionId/tagId 全为空 → 400。"""
+    r = await client.post("/api/v1/photos/filter", json={})
+    j = r.json()
+    assert_match("photos.filter.empty.code", 400, j.get("code"))
+
+
 # ---------- Categories ----------
 
 @pytest.mark.asyncio
@@ -682,7 +691,7 @@ def test_mismatch_report():
         lines = "\n".join(f"  - {m}" for m in MISMATCHES)
         pytest.fail(f"\n发现 {len(MISMATCHES)} 处与 interface.md 不匹配:\n{lines}")
     # 否则只留一句 OK
-    print("\n[OK] 全部 26 个接口 + 字段与 docs/interface.md 完全匹配。")
+    print("\n[OK] 全部 27 个接口 + 字段与 docs/interface.md 完全匹配。")
 
 
 # ============================================================================
@@ -1042,6 +1051,7 @@ async def test_e2e_envelope_is_consistent(client, registered_user):
         ("GET",  "/api/v1/photos/99999999",          None),  # 404
         ("DELETE", "/api/v1/photos/99999999",        None),  # 404
         ("DELETE", "/api/v1/photos/batch",           {"photoIds": []}),  # 400
+        ("POST",  "/api/v1/photos/filter",          {}),  # 400（全空字段）
     ]
     for method, url, body in paths:
         r = await client.request(method, url, json=body) if body else await client.request(method, url)

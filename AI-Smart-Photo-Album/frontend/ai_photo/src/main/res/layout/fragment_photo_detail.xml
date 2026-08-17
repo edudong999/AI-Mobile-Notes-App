@@ -33,7 +33,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="AI Analysis"
+            android:text="@string/detail_section_ai"
             android:textStyle="bold"
             android:textSize="16sp"
             android:layout_marginTop="16dp" />
@@ -80,13 +80,13 @@
             android:id="@+id/desc_input"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="edit description"
+            android:hint="@string/detail_desc_hint"
             android:layout_marginTop="16dp" />
 
         <Button
             android:id="@+id/btn_save_desc"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="save description" />
+            android:text="@string/detail_save_desc" />
     </LinearLayout>
 </ScrollView>

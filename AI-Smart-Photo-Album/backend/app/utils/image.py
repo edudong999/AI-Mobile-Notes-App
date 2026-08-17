@@ -2,7 +2,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 try:
     from pillow_heif import register_heif_opener
@@ -12,6 +12,47 @@ except Exception:
 
 
 SUPPORTED_EXTS = {"jpg", "jpeg", "png", "heic", "webp"}
+
+# 把 PIL 检测到的 format 映射到本项目使用的扩展名
+_PIL_FORMAT_TO_EXT = {
+    "JPEG": "jpg",
+    "PNG": "png",
+    "WEBP": "webp",
+    "HEIF": "heic",
+    "HEIC": "heic",
+}
+
+
+def detect_format(path: Path) -> str | None:
+    """读取文件 magic bytes，识别实际图像格式。
+
+    用于客户端传错扩展名（例如把 HEIF 标成 .png）时的修正。
+    返回小写扩展名（不带点）；识别失败返回 None。
+    """
+    try:
+        with Image.open(path) as im:
+            fmt = (im.format or "").upper()
+            return _PIL_FORMAT_TO_EXT.get(fmt)
+    except (UnidentifiedImageError, FileNotFoundError, OSError):
+        return None
+
+
+def normalize_to_supported_ext(path: Path) -> str | None:
+    """按真实内容重新确定扩展名（必要时重命名文件）。
+
+    返回最终的扩展名（小写，无点）；识别失败返回 None（调用方应放弃或报错）。
+    """
+    detected = detect_format(path)
+    if not detected or detected not in SUPPORTED_EXTS:
+        return None
+    current_ext = path.suffix.lstrip(".").lower()
+    if current_ext != detected:
+        new_path = path.with_suffix(f".{detected}")
+        try:
+            path.rename(new_path)
+        except OSError:
+            return None
+    return detected
 
 
 def normalize_ext(filename: str) -> str:

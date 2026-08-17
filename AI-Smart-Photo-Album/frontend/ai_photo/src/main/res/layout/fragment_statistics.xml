@@ -17,20 +17,20 @@
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:textSize="18sp" android:layout_marginBottom="16dp" />
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Category Distribution"
+            android:text="@string/stats_section_distribution"
             android:textSize="20sp" android:textStyle="bold" />
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Scene" android:textStyle="bold" android:layout_marginTop="12dp" />
+            android:text="@string/stats_section_scene" android:textStyle="bold" android:layout_marginTop="12dp" />
         <LinearLayout android:id="@+id/scene_dist"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="vertical" android:layout_marginTop="4dp" />
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Emotion" android:textStyle="bold" android:layout_marginTop="12dp" />
+            android:text="@string/stats_section_emotion" android:textStyle="bold" android:layout_marginTop="12dp" />
         <LinearLayout android:id="@+id/emotion_dist"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="vertical" android:layout_marginTop="4dp" />
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Tag" android:textStyle="bold" android:layout_marginTop="12dp" />
+            android:text="@string/stats_section_tag" android:textStyle="bold" android:layout_marginTop="12dp" />
         <LinearLayout android:id="@+id/tag_dist"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="vertical" android:layout_marginTop="4dp" />

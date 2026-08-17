@@ -12,5 +12,5 @@ def to_iso(dt: datetime | None) -> str | None:
 
 
 def utcnow_naive() -> datetime:
-    """当前 UTC 时间，tzinfo=None（兼容 MySQL DATETIME 列）。"""
+    """当前 UTC 时间，tzinfo=None（与 SQLite TEXT 时间戳列保持一致）。"""
     return datetime.now(timezone.utc).replace(tzinfo=None)

@@ -82,9 +82,12 @@ public interface ApiService {
     Call<Envelope<CategoryPhotosResponse>> categoryPhotos(
         @Path("id") long id, @Query("page") int page, @Query("pageSize") int pageSize);
 
-    // ===== AI (2) =====
+    // ===== AI (3) =====
     @GET("api/v1/ai/status")
     Call<Envelope<AiStatusResponse>> aiStatus();
+
+    @GET("api/v1/ai/queue")
+    Call<Envelope<AiQueueResponse>> aiQueue();
 
     @POST("api/v1/ai/reanalyze")
     Call<Envelope<ReanalyzeResponse>> reanalyze(@Body ReanalyzeRequest req);

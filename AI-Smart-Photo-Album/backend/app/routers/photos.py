@@ -22,7 +22,7 @@ from app.schemas.photo import (
 from app.services import photo_service, favorite_service, file_storage
 from app.services.ai import analyze_photo, extract_query_tags
 from app.services.file_storage import origin_url, thumb_url
-from app.utils.image import make_thumbnail, normalize_ext, read_image_info, SUPPORTED_EXTS
+from app.utils.image import make_thumbnail, normalize_ext, read_image_info, SUPPORTED_EXTS, normalize_to_supported_ext
 from app.utils.time import to_iso
 from app.models.ai_task import notify_new_task
 
@@ -109,6 +109,9 @@ async def upload(
             photo.original_path = str(origin)
             await file_storage.save_bytes(origin, data)
 
+            # 内容嗅探：客户端有时把 HEIC 标成 .png，导致 PIL 打不开 → 重命名为正确扩展名
+            real_ext = normalize_to_supported_ext(origin) or ext
+
             thumb = file_storage.thumb_path(photo.photo_id)
             try:
                 make_thumbnail(origin, thumb)
@@ -120,6 +123,7 @@ async def upload(
             photo.width = info["width"]
             photo.height = info["height"]
             photo.shot_at = info["shot_at"]
+            _ = real_ext  # 真实扩展名已反映到磁盘路径上
 
             db.add(AITask(photo_id=photo.photo_id, status=AITaskStatus.queued))
             await db.commit()

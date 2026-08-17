@@ -19,7 +19,7 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.VH> {
 
     public void submit(List<CategoryListItem> data) {
         items.clear();
-        items.addAll(data);
+        if (data != null) items.addAll(data);
         notifyDataSetChanged();
     }
 
@@ -29,8 +29,9 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.VH> {
 
     @Override public void onBindViewHolder(@NonNull VH h, int pos) {
         CategoryListItem it = items.get(pos);
-        h.name.setText(it.categoryName);
-        h.count.setText(it.photoCount + " photos");
+        h.name.setText(it.categoryName != null ? it.categoryName : "");
+        h.count.setText(h.itemView.getContext().getString(
+            R.string.category_photo_count_format, it.photoCount));
         h.itemView.setOnClickListener(v -> onClick.onCategory(it));
     }
 

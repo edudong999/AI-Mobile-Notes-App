@@ -30,9 +30,10 @@ def origin_url(photo_id: int, ext: str) -> str:
     return f"{settings.STATIC_URL_PREFIX}/origin/{photo_id}.{ext.lstrip('.')}"
 
 
-def thumb_url(photo_id: int) -> str:
-    """缩略图静态访问 URL。"""
-    return f"{settings.STATIC_URL_PREFIX}/thumb/{photo_id}.webp"
+def thumb_url(photo_id: int) -> str | None:
+    """缩略图静态访问 URL；缩略图不存在时返回 None（避免前端 404 触发 placeholder）。"""
+    p = thumb_path(photo_id)
+    return f"{settings.STATIC_URL_PREFIX}/thumb/{photo_id}.webp" if p.exists() else None
 
 
 def sha256_of_bytes(data: bytes) -> str:

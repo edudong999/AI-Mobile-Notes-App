@@ -13,16 +13,14 @@ import com.ai_photo.data.model.category.CategoryPhotosResponse;
 import com.ai_photo.data.model.photo.PhotoListItem;
 import com.ai_photo.data.repo.CategoryRepo;
 import com.ai_photo.ui.photos.PhotoAdapter;
+import com.ai_photo.util.BgExecutor;
 import com.ai_photo.util.Result;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class CategoryPhotosFragment extends Fragment {
     private CategoryRepo repo = new CategoryRepo();
-    private ExecutorService exec = Executors.newSingleThreadExecutor();
     private long categoryId;
     private String categoryName;
 
@@ -55,14 +53,17 @@ public class CategoryPhotosFragment extends Fragment {
         recycler.setLayoutManager(new GridLayoutManager(getContext(), 3));
         recycler.setAdapter(adapter);
 
-        exec.execute(() -> {
+        BgExecutor.execute(() -> {
             Result<?> r = repo.photos(categoryId, 1, 60);
             final android.app.Activity a = getActivity();
-            if (a == null) return;
+            if (a == null || a.isDestroyed()) return;
             a.runOnUiThread(() -> {
+                if (getView() == null) return;
                 if (r instanceof Result.Success) {
                     CategoryPhotosResponse data = (CategoryPhotosResponse) ((Result.Success<?>) r).data;
-                    List<PhotoListItem> items = data.list.stream().map(p -> {
+                    List<com.ai_photo.data.model.category.CategoryPhotoItem> src =
+                        data != null && data.list != null ? data.list : java.util.Collections.emptyList();
+                    List<PhotoListItem> items = src.stream().map(p -> {
                         PhotoListItem it = new PhotoListItem();
                         it.photoId = p.photoId;
                         it.thumbnailUrl = p.thumbnailUrl;
@@ -71,7 +72,8 @@ public class CategoryPhotosFragment extends Fragment {
                     }).collect(Collectors.toList());
                     adapter.submit(items);
                 } else if (r instanceof Result.Error) {
-                    Toast.makeText(getContext(), ((Result.Error<?>) r).message, Toast.LENGTH_SHORT).show();
+                    android.content.Context ctx = getContext();
+                    if (ctx != null) Toast.makeText(ctx, ((Result.Error<?>) r).message, Toast.LENGTH_SHORT).show();
                 }
             });
         });
@@ -79,6 +81,5 @@ public class CategoryPhotosFragment extends Fragment {
 
     @Override public void onDestroyView() {
         super.onDestroyView();
-        exec.shutdown();
     }
 }

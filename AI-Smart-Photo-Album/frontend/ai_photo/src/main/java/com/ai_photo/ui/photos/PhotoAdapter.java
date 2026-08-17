@@ -28,7 +28,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.VH> {
 
     public void submit(List<PhotoListItem> data) {
         items.clear();
-        items.addAll(data);
+        if (data != null) items.addAll(data);
         notifyDataSetChanged();
     }
 

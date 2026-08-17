@@ -16,7 +16,7 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
 
     public void submit(List<SearchItem> data) {
         items.clear();
-        items.addAll(data);
+        if (data != null) items.addAll(data);
         notifyDataSetChanged();
     }
 
@@ -27,8 +27,8 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
     @Override public void onBindViewHolder(@NonNull VH h, int pos) {
         SearchItem it = items.get(pos);
         GlideUtil.loadThumb(h.thumb, it.thumbnailUrl);
-        h.tags.setText(String.join(", ", it.matchedTags));
-        h.score.setText("score: " + it.score);
+        if (it.matchedTags != null) h.tags.setText(String.join(", ", it.matchedTags));
+        h.score.setText(String.format(java.util.Locale.getDefault(), "%.2f", it.score));
     }
 
     @Override public int getItemCount() { return items.size(); }

@@ -9,14 +9,11 @@ import com.ai_photo.AiPhotoApp;
 import com.ai_photo.R;
 import com.ai_photo.data.repo.AuthRepo;
 import com.ai_photo.ui.main.MainActivity;
+import com.ai_photo.util.BgExecutor;
 import com.ai_photo.util.Result;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class LoginActivity extends AppCompatActivity {
     private AuthRepo repo = new AuthRepo();
-    private ExecutorService exec = Executors.newSingleThreadExecutor();
     private boolean registerMode = false;
 
     private EditText username, password, email;
@@ -51,7 +48,7 @@ public class LoginActivity extends AppCompatActivity {
     private void applyMode() {
         title.setText(registerMode ? R.string.title_register : R.string.title_login);
         submit.setText(registerMode ? R.string.btn_register : R.string.btn_login);
-        toggle.setText(registerMode ? "返回登录" : "立即注册");
+        toggle.setText(registerMode ? R.string.toggle_back_login : R.string.toggle_to_register);
         email.setVisibility(registerMode ? View.VISIBLE : View.GONE);
     }
 
@@ -59,12 +56,12 @@ public class LoginActivity extends AppCompatActivity {
         String u = username.getText().toString().trim();
         String p = password.getText().toString();
         if (u.isEmpty() || p.isEmpty()) {
-            toast("用户名和密码必填");
+            toast(R.string.msg_login_required);
             return;
         }
         loading.setVisibility(View.VISIBLE);
         submit.setEnabled(false);
-        exec.execute(() -> {
+        BgExecutor.execute(() -> {
             Result<?> r = registerMode
                 ? repo.register(u, p, email.getText().toString())
                 : repo.login(u, p);

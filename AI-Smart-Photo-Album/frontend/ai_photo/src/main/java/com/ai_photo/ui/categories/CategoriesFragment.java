@@ -12,15 +12,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.ai_photo.R;
 import com.ai_photo.data.model.category.CategoryListResponse;
 import com.ai_photo.data.repo.CategoryRepo;
+import com.ai_photo.util.BgExecutor;
 import com.ai_photo.util.Result;
 import com.google.android.material.tabs.TabLayout;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 public class CategoriesFragment extends Fragment {
     private CategoryRepo repo = new CategoryRepo();
-    private ExecutorService exec = Executors.newSingleThreadExecutor();
     private CategoryAdapter adapter;
     private static final String[] TYPES = {"scene", "emotion", "tag"};
 
@@ -49,17 +46,12 @@ public class CategoriesFragment extends Fragment {
         load(0);
     }
 
-    @Override public void onDestroyView() {
-        super.onDestroyView();
-        exec.shutdown();
-    }
-
     private void load(int idx) {
         String type = TYPES[idx];
-        exec.execute(() -> {
+        BgExecutor.execute(() -> {
             Result<?> r = repo.list(type);
             final android.app.Activity a = getActivity();
-            if (a == null) return;
+            if (a == null || a.isDestroyed()) return;
             a.runOnUiThread(() -> {
                 if (getView() == null) return;
                 if (r instanceof Result.Success) {

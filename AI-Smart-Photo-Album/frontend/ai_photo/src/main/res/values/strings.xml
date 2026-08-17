@@ -377,4 +377,99 @@
     <string name="msg_upload_ok">上传成功</string>
     <string name="msg_logout_ok">登出成功</string>
     <string name="msg_network_err">网络异常，请检查后端是否启动（10.0.2.2:8000）</string>
+
+    <!-- ====== 照片详情 ====== -->
+    <string name="detail_section_ai">AI 分析</string>
+    <string name="detail_meta_format">%1$d × %2$d · %3$d 字节</string>
+    <string name="detail_meta_unknown">元数据不可用</string>
+    <string name="detail_analysis_pending">AI 分析尚未完成</string>
+    <string name="detail_desc_none">（无描述）</string>
+    <string name="detail_field_scene">场景：%1$s</string>
+    <string name="detail_field_emotion">情绪：%1$s</string>
+    <string name="detail_field_tags">标签：%1$s</string>
+    <string name="detail_field_unset">未识别</string>
+    <string name="detail_desc_hint">编辑描述</string>
+    <string name="detail_save_desc">保存描述</string>
+    <string name="msg_queued">已加入分析队列</string>
+    <string name="msg_saved">已保存</string>
+
+    <!-- ====== 搜索 ====== -->
+    <string name="search_tab_query">搜索</string>
+    <string name="search_tab_filter">筛选</string>
+    <string name="search_query_hint">用一句话描述照片</string>
+    <string name="search_go">搜索</string>
+    <string name="search_apply_filter">应用筛选</string>
+    <string name="search_none_option">（不限）</string>
+    <string name="msg_query_empty">搜索内容不能为空</string>
+    <string name="msg_select_at_least_one">请至少选择一个筛选条件</string>
+
+    <!-- ====== 我的/统计/收藏 ====== -->
+    <string name="profile_btn_favorites">我的收藏</string>
+    <string name="profile_btn_statistics">数据统计</string>
+    <string name="profile_btn_admin">分类管理</string>
+    <string name="stats_total_format">照片总量：%1$d</string>
+    <string name="stats_analyzed_format">已分析：%1$d</string>
+    <string name="stats_favorites_format">收藏数量：%1$d</string>
+    <string name="stats_distribution_format">%1$s：%2$d（%3$.1f%%）</string>
+    <string name="stats_section_distribution">分类分布</string>
+    <string name="stats_section_scene">场景</string>
+    <string name="stats_section_emotion">情绪</string>
+    <string name="stats_section_tag">标签</string>
+    <string name="stats_empty">暂无统计数据</string>
+    <string name="category_photo_count_format">%1$d 张</string>
+
+    <!-- ====== AI 队列 ====== -->
+    <string name="ai_status_format">已完成 %1$d / 待处理 %2$d（共 %3$d）</string>
+    <string name="ai_note">提示：已加入队列的任务会在后端 AI worker 日志中查看。</string>
+
+    <!-- 队列顶部汇总 -->
+    <string name="ai_queue_summary">共 %1$d 张照片 · 已完成 %2$d</string>
+    <string name="ai_queue_section_processing">正在分析（%1$d）</string>
+    <string name="ai_queue_section_pending">待处理（%1$d）</string>
+    <string name="ai_queue_section_failed">分析失败（%1$d）· 可重试</string>
+    <string name="ai_queue_section_done">已完成（%1$d）</string>
+    <string name="ai_queue_empty">暂无照片，上传几张试试</string>
+
+    <!-- 队列行内 4 种状态徽章 -->
+    <string name="ai_queue_badge_pending">待处理</string>
+    <string name="ai_queue_badge_processing">分析中</string>
+    <string name="ai_queue_badge_done">已完成</string>
+    <string name="ai_queue_badge_failed">失败</string>
+
+    <!-- 队列行内状态描述（短句） -->
+    <string name="ai_queue_desc_pending">等待 AI worker 调度</string>
+    <string name="ai_queue_desc_processing">正在分析，请稍候…</string>
+    <string name="ai_queue_desc_done">分析完成 ✓</string>
+    <string name="ai_queue_desc_failed">分析失败，请点击重试</string>
+    <!-- 带重试次数的描述（%1$d = retry_count） -->
+    <string name="ai_queue_desc_pending_retry_n">等待第 %1$d 次重试</string>
+    <string name="ai_queue_desc_processing_retry_n">第 %1$d 次重试中…</string>
+    <string name="ai_queue_desc_failed_n">已重试 %1$d 次后失败</string>
+
+    <string name="ai_queue_retry_queued">已重新加入队列 (#%1$d)</string>
+
+    <!-- ====== 分类管理（admin） ====== -->
+    <string name="admin_btn_new">新增</string>
+    <string name="admin_btn_reset_all">恢复全部默认</string>
+    <string name="admin_btn_edit">编辑</string>
+    <string name="admin_btn_delete">删除</string>
+    <string name="admin_item_type_cd">分类条目</string>
+    <string name="admin_dialog_create_title">新增 %1$s 分类</string>
+    <string name="admin_dialog_create_hint">分类名称</string>
+    <string name="admin_dialog_rename_title">重命名分类</string>
+    <string name="admin_dialog_delete_title">删除 \"%1$s\"？</string>
+    <string name="admin_dialog_reset_title">恢复全部默认分类？</string>
+    <string name="admin_dialog_reset_message">将删除所有自定义分类，并重新载入默认 60 项。</string>
+    <string name="admin_btn_create">确定</string>
+    <string name="admin_btn_save">保存</string>
+    <string name="admin_btn_reset">恢复</string>
+    <string name="admin_btn_cancel">取消</string>
+
+    <!-- ====== 通用 ====== -->
+    <string name="cd_photo">照片</string>
+
+    <!-- 登录页切换 -->
+    <string name="toggle_back_login">返回登录</string>
+    <string name="toggle_to_register">立即注册</string>
+    <string name="msg_login_required">用户名和密码必填</string>
 </resources>

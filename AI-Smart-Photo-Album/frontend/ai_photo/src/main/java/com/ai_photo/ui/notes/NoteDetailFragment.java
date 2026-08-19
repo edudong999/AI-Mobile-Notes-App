@@ -196,9 +196,8 @@ public class NoteDetailFragment extends Fragment {
     }
 
     private void hideAiOverlay() {
-        if (aiOverlay == null) return;
         isAiRunning = false;
-        aiOverlay.setVisibility(View.GONE);
+        if (aiOverlay != null) aiOverlay.setVisibility(View.GONE);
     }
 
     @Override public void onResume() {
@@ -222,6 +221,10 @@ public class NoteDetailFragment extends Fragment {
         if (poller != null) handler.removeCallbacks(poller);
         // 让进行中的后台任务发现 view 已销毁，自动放弃 runOnUiThread
         loadGeneration++;
+        // view 销毁时重置 AI 加载态：避免回调丢失导致 isAiRunning 卡在 true
+        isAiRunning = false;
+        aiOverlay = null;
+        aiOverlayLabel = null;
     }
 
     @SuppressWarnings("unchecked")

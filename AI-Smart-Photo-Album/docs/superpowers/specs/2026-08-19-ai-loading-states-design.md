@@ -52,8 +52,8 @@
 
 | 文件 | 操作 | 职责 |
 |---|---|---|
-| `frontend/ai_photo/src/main/res/layout/overlay_ai_loading.xml` | Create | 蒙层根 FrameLayout + 内嵌 ProgressBar + TextView |
-| `frontend/ai_photo/src/main/res/layout/fragment_note_detail.xml` | Modify | 在 `</androidx.constraintlayout.widget.ConstraintLayout>` 前 `<include>` 上面 overlay |
+| `frontend/ai_photo/src/main/res/layout/overlay_ai_loading.xml` | Create | 蒙层根 FrameLayout + 内嵌 ProgressBar + TextView；`android:elevation="16dp"` 保证压在 action_bar 之上 |
+| `frontend/ai_photo/src/main/res/layout/fragment_note_detail.xml` | Modify | 在 `</androidx.constraintlayout.widget.ConstraintLayout>` 前作为最后一个子节点 `<include>` overlay（z-order 顶端） |
 | `frontend/ai_photo/src/main/res/values/strings.xml` | Modify | 加 3 条文案 |
 | `frontend/ai_photo/src/main/java/com/ai_photo/ui/notes/NoteDetailFragment.java` | Modify | view 引用、`isAiRunning` 旗标、`showAiOverlay/hideAiOverlay` helper、3 个 callback 接点 |
 

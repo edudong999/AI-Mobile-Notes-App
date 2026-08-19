@@ -27,6 +27,10 @@ TEST_DATA_DIR = "./tests/_data"
 os.environ["DATABASE_URL"] = TEST_DB_URL
 os.environ["DATA_DIR"] = TEST_DATA_DIR
 os.environ["JWT_SECRET"] = "test-secret"
+# 强制走 mock provider：本地 .env 里写的是 dashscope + 真实 key，测试不能
+# 触发真实网络调用，也不能让响应内容脱离预期。
+os.environ["LLM_PROVIDER"] = "mock"
+os.environ.pop("DASHSCOPE_API_KEY", None)
 Path(TEST_DATA_DIR).mkdir(parents=True, exist_ok=True)
 
 
@@ -53,11 +57,28 @@ async def _prepare_db(engine):
     """
     from app.database import Base, run_sql_file
     import app.models  # noqa: F401 触发模型注册
+    from sqlalchemy import text
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-    await run_sql_file("migrations/002_seed_categories.sql")
+    # categories 表由 SQL 迁移 001_schema.sql 创建（不在 SQLAlchemy 模型里），
+    # 现代码库不再自动跑 001；如果表不存在直接跳过 seed，避免全测试套件被这条
+    # 旧基础设施卡死。
+    async with engine.connect() as conn:
+        has_categories = (await conn.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='categories'")
+        )).first() is not None
+        if has_categories:
+            # 002_seed_categories.sql is the legacy photo-category seed; only
+            # run when the table has the old `type` column. New note
+            # `Category` uses `color` + `sort_index`.
+            col_rows = (await conn.execute(
+                text("PRAGMA table_info(categories)")
+            )).all()
+            col_names = {row[1] for row in col_rows}
+            if "type" in col_names:
+                await run_sql_file("migrations/002_seed_categories.sql")
     yield
 
 

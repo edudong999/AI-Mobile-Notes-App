@@ -3,13 +3,11 @@ from typing import Literal
 
 
 class NoteCreate(BaseModel):
-    folderId: int | None = None
     title: str | None = None
     textContent: str | None = None
 
 
 class NoteUpdate(BaseModel):
-    folderId: int | None = None
     title: str | None = None
     textContent: str | None = None
     isArchived: bool | None = None
@@ -26,6 +24,8 @@ class NoteFileItem(BaseModel):
     width: int | None
     height: int | None
     sortIndex: int
+    kind: str = "original"
+    parentFileId: int | None = None
 
 
 class QuestionItem(BaseModel):
@@ -43,14 +43,15 @@ class NoteListItem(BaseModel):
     title: str
     summary: str
     aiStatus: str
-    folderId: int | None
+    categories: list[int] = []
     thumbCount: int
+    thumbUrl: str | None = None
     updatedAt: str | None
 
 
 class NoteDetail(BaseModel):
     noteId: int
-    folderId: int | None
+    categories: list[int] = []
     title: str
     textContent: str
     summary: str

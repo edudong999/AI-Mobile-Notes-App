@@ -1,95 +1,98 @@
-"""分类数据访问：列表、计数、封面预览、分类下照片。"""
+"""Category service: list, create, rename, reorder, delete, count notes by category."""
+from __future__ import annotations
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.exceptions import BizException
-from app.models import Category, CategoryType, Photo, PhotoCategory
-from app.services.file_storage import thumb_url
+from app.models import Category
 
 
-async def list_by_type(db: AsyncSession, type_: CategoryType | None = None) -> list[Category]:
-    """按 type 过滤获取启用的分类列表。"""
-    stmt = (
+async def list_categories(db: AsyncSession, user_id: int) -> list[Category]:
+    """List a user's categories, ordered by sort_index / category_id."""
+    rows = (await db.execute(
         select(Category)
-        .where(Category.is_enabled == 1)
-        .order_by(Category.type, Category.sort_order)
-    )
-    if type_:
-        stmt = stmt.where(Category.type == type_)
-    return list((await db.execute(stmt)).scalars().all())
-
-
-async def get_or_404(db: AsyncSession, category_id: int) -> Category:
-    """按 id 取分类，未找到或被禁用则抛 404。"""
-    cat = await db.get(Category, category_id)
-    if not cat or not cat.is_enabled:
-        raise BizException(404, "分类不存在")
-    return cat
-
-
-async def count_photos_by_category(
-    db: AsyncSession, category_ids: list[int], user_id: int | None = None
-) -> dict[int, int]:
-    """返回 {category_id: photo_count}；空入参直接返回 {}。
-
-    user_id 非空时只统计该用户的照片（避免跨用户串数）。
-    """
-    if not category_ids:
-        return {}
-    stmt = select(PhotoCategory.category_id, func.count(PhotoCategory.photo_id))
-    if user_id is not None:
-        stmt = stmt.join(Photo, PhotoCategory.photo_id == Photo.photo_id).where(
-            Photo.user_id == user_id,
-            Photo.deleted_at.is_(None),
-        )
-    stmt = stmt.where(PhotoCategory.category_id.in_(category_ids)).group_by(PhotoCategory.category_id)
-    rows = (await db.execute(stmt)).all()
-    return dict(rows)
-
-
-async def preview_cover(
-    db: AsyncSession, category_id: int, user_id: int, n: int = 4
-) -> list[dict]:
-    """返回某分类下用户最近 n 张照片的 [{photoId, thumbnailUrl}] 列表。"""
-    rows = (await db.execute(
-        select(Photo.photo_id)
-        .join(PhotoCategory, PhotoCategory.photo_id == Photo.photo_id)
-        .where(
-            PhotoCategory.category_id == category_id,
-            Photo.user_id == user_id,
-            Photo.deleted_at.is_(None),
-        )
-        .order_by(Photo.created_at.desc())
-        .limit(n)
-    )).all()
-    return [{"photoId": pid, "thumbnailUrl": thumb_url(pid)} for (pid,) in rows]
-
-
-async def cover_photo(db: AsyncSession, category_id: int, user_id: int) -> str | None:
-    """获取某分类下用户最新一张照片的缩略图 URL 作为封面。"""
-    covers = await preview_cover(db, category_id, user_id, n=1)
-    return covers[0]["thumbnailUrl"] if covers else None
-
-
-async def list_photos_in_category(
-    db: AsyncSession, category_id: int, user_id: int, page: int, page_size: int
-) -> tuple[list[Photo], int]:
-    """分页获取某分类下用户的照片列表。"""
-    base = (
-        select(Photo)
-        .join(PhotoCategory, PhotoCategory.photo_id == Photo.photo_id)
-        .where(
-            PhotoCategory.category_id == category_id,
-            Photo.user_id == user_id,
-            Photo.deleted_at.is_(None),
-        )
-    )
-    total = (await db.execute(
-        select(func.count()).select_from(base.subquery())
-    )).scalar_one()
-    rows = (await db.execute(
-        base.order_by(Photo.created_at.desc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
+        .where(Category.user_id == user_id)
+        .order_by(Category.sort_index, Category.category_id)
     )).scalars().all()
-    return list(rows), total
+    return list(rows)
+
+
+async def create_category(db: AsyncSession, user_id: int, name: str,
+                           color: str = "#4A90E2") -> Category:
+    """Create category; rejects duplicate (user_id, name)."""
+    name = name.strip()
+    if not name:
+        raise BizException(400, "分类名不能为空")
+    existing = (await db.execute(
+        select(Category).where(
+            Category.user_id == user_id, Category.name == name,
+        )
+    )).scalars().first()
+    if existing:
+        raise BizException(400, "分类名已存在")
+    max_idx = (await db.execute(
+        select(func.coalesce(func.max(Category.sort_index), -1))
+        .where(Category.user_id == user_id)
+    )).scalar_one()
+    c = Category(user_id=user_id, name=name, color=color, sort_index=max_idx + 1)
+    db.add(c)
+    await db.commit()
+    await db.refresh(c)
+    return c
+
+
+async def update_category(db: AsyncSession, category_id: int, user_id: int,
+                          name: str | None, color: str | None,
+                          sort_index: int | None) -> Category:
+    """Update category (only non-None fields); 404 if not owned."""
+    c = await db.get(Category, category_id)
+    if c is None or c.user_id != user_id:
+        raise BizException(404, "分类不存在")
+    if name is not None:
+        new_name = name.strip()
+        if new_name and new_name != c.name:
+            dup = (await db.execute(
+                select(Category).where(
+                    Category.user_id == user_id,
+                    Category.name == new_name,
+                    Category.category_id != category_id,
+                )
+            )).scalars().first()
+            if dup:
+                raise BizException(400, "分类名已存在")
+            c.name = new_name
+    if color is not None:
+        c.color = color
+    if sort_index is not None:
+        c.sort_index = sort_index
+    await db.commit()
+    await db.refresh(c)
+    return c
+
+
+async def delete_category(db: AsyncSession, category_id: int, user_id: int) -> None:
+    """Delete category; 404 if not owned."""
+    c = await db.get(Category, category_id)
+    if c is None or c.user_id != user_id:
+        raise BizException(404, "分类不存在")
+    await db.delete(c)
+    await db.commit()
+
+
+async def reorder(db: AsyncSession, user_id: int, ordered_ids: list[int]) -> None:
+    """Rewrite sort_index 0..n-1 in the order given."""
+    for i, cid in enumerate(ordered_ids):
+        await update_category(db, cid, user_id, None, None, i)
+
+
+async def count_notes(db: AsyncSession, user_id: int, category_id: int) -> int:
+    """Count this user's active notes that belong to this category."""
+    from app.models import Note, NoteCategory
+    return (await db.execute(
+        select(func.count(Note.note_id))
+        .join(NoteCategory, NoteCategory.note_id == Note.note_id)
+        .where(
+            Note.user_id == user_id,
+            Note.deleted_at.is_(None),
+            NoteCategory.category_id == category_id,
+        )
+    )).scalar_one()

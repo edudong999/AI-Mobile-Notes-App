@@ -5,7 +5,7 @@ import enum
 from typing import Optional
 
 from sqlalchemy import DateTime, Enum as SAEnum, ForeignKey, Integer, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
@@ -26,11 +26,6 @@ class Note(Base):
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False
     )
-    folder_id: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        ForeignKey("notebook_folders.folder_id", ondelete="SET NULL"),
-        nullable=True,
-    )
     title: Mapped[str] = mapped_column(String, nullable=False, default="")
     text_content: Mapped[str] = mapped_column(Text, nullable=False, default="")
     summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
@@ -40,6 +35,7 @@ class Note(Base):
         default=AIStatus.pending,
     )
     ocr_engine: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    mindmap_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_archived: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[Optional[DateTime]] = mapped_column(
         DateTime, server_default=func.current_timestamp()
@@ -50,3 +46,10 @@ class Note(Base):
         onupdate=func.current_timestamp(),
     )
     deleted_at: Mapped[Optional[DateTime]] = mapped_column(DateTime, nullable=True)
+
+    categories: Mapped[list["Category"]] = relationship(
+        "Category",
+        secondary="note_categories",
+        back_populates="notes",
+        lazy="selectin",
+    )

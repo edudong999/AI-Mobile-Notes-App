@@ -1,80 +1,25 @@
-"""分类相关 schema：预览、列表、详情、Admin CRUD。"""
+"""Category Pydantic schemas: create / update / reorder / list item."""
 from pydantic import BaseModel
 
 
-class CategoryPreviewItem(BaseModel):
-    categoryId: int
-    categoryName: str
-    photoCount: int
-    previewPhotos: list[dict]  # [{photoId, thumbnailUrl}]
-
-
-class CategoryPreviewResponse(BaseModel):
-    scene: list[CategoryPreviewItem]
-    emotion: list[CategoryPreviewItem]
-    tag: list[CategoryPreviewItem]
-
-
-class CategoryListItem(BaseModel):
-    categoryId: int
-    categoryName: str
-    photoCount: int
-    coverThumbnail: str | None = None
-
-
-class CategoryListResponse(BaseModel):
-    type: str
-    list: list[CategoryListItem]
-
-
-class CategoryPhotoItem(BaseModel):
-    photoId: int
-    thumbnailUrl: str
-    createdAt: str
-
-
-class CategoryPhotoResponse(BaseModel):
-    categoryId: int
-    categoryName: str
-    list: list[CategoryPhotoItem]
-    total: int
-    page: int
-    pageSize: int
-
-
-class AdminCategoryItem(BaseModel):
-    categoryId: int
-    type: str
+class CategoryCreate(BaseModel):
     name: str
-    iconUrl: str | None = None
-    photoCount: int
-    createdAt: str
+    color: str | None = None
 
 
-class AdminCategoryListResponse(BaseModel):
-    list: list[AdminCategoryItem]
-    total: int
-
-
-class AdminCategoryCreateRequest(BaseModel):
-    type: str
-    name: str
-    iconUrl: str | None = None
-
-
-class AdminCategoryCreateResponse(BaseModel):
-    categoryId: int
-
-
-class AdminCategoryUpdateRequest(BaseModel):
+class CategoryUpdate(BaseModel):
     name: str | None = None
-    iconUrl: str | None = None
+    color: str | None = None
+    sortIndex: int | None = None
 
 
-class AdminCategoryResetRequest(BaseModel):
-    confirm: bool
+class CategoryReorderRequest(BaseModel):
+    orderedIds: list[int]
 
 
-class AdminCategoryResetResponse(BaseModel):
-    resetCount: int
-    removedCount: int
+class CategoryItem(BaseModel):
+    categoryId: int
+    name: str
+    color: str
+    sortIndex: int
+    noteCount: int

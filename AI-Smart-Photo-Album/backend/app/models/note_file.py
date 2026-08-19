@@ -22,6 +22,10 @@ class NoteFile(Base):
     width: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     height: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     sort_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    kind: Mapped[str] = mapped_column(String, nullable=False, default="original")
+    parent_file_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("note_files.file_id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[Optional[DateTime]] = mapped_column(
         DateTime, server_default=func.current_timestamp()
     )

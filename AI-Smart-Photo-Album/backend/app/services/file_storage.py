@@ -66,3 +66,29 @@ def note_thumbs_dir() -> Path:
 def note_origin_path(note_id: int, ext: str) -> Path:
     """笔记原图磁盘路径，文件名带随机后缀避免冲突。"""
     return note_data_dir() / f"{note_id}_{int.from_bytes(os.urandom(2), 'big')}.{ext.lstrip('.')}"
+
+
+def public_url_for(disk_path: str | Path | None) -> str:
+    """Map a disk path under DATA_DIR to its public `/static/...` URL.
+
+    Returns "" if path is empty/None or outside the data dir.
+    """
+    if not disk_path:
+        return ""
+    p = Path(disk_path)
+    try:
+        rel = p.relative_to(Path(settings.DATA_DIR))
+    except ValueError:
+        return ""
+    return f"{settings.STATIC_URL_PREFIX}/{rel.as_posix()}"
+
+
+def absolute_url_for(disk_path: str | Path | None, base: str | None = None) -> str:
+    """Build absolute http(s) URL for a disk file, suitable for LLM provider fetch."""
+    rel = public_url_for(disk_path)
+    if not rel:
+        return ""
+    if rel.startswith("http://") or rel.startswith("https://"):
+        return rel
+    base = (base or os.environ.get("PUBLIC_BASE_URL") or "http://localhost:8000").rstrip("/")
+    return base + rel

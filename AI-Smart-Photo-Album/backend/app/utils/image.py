@@ -1,6 +1,8 @@
 """图片处理：扩展名、缩略图、EXIF 信息。"""
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
+import base64
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
@@ -104,3 +106,37 @@ def read_image_info(src: Path) -> dict:
     except Exception:
         pass
     return info
+
+
+def to_jpeg_data_uri(src: Path, max_side: int = 1600, quality: int = 85) -> str | None:
+    """把图片读成 JPEG 字节并打包成 `data:image/jpeg;base64,...` URI。
+
+    用于把磁盘图片直接传给多模态 LLM。读不到或不是图片返回 None。
+    长边超过 max_side 时按比例缩小（保持纵横比）。
+    """
+    try:
+        with Image.open(src) as im:
+            im = ImageOps.exif_transpose(im)
+            if im.mode in ("RGBA", "P", "LA"):
+                bg = Image.new("RGB", im.size, (255, 255, 255))
+                mask = im.split()[-1] if im.mode in ("RGBA", "LA") else None
+                bg.paste(im, mask=mask)
+                im = bg
+            elif im.mode != "RGB":
+                im = im.convert("RGB")
+
+            w, h = im.size
+            if w == 0 or h == 0:
+                return None
+            long_side = max(w, h)
+            if long_side > max_side:
+                scale = max_side / long_side
+                im = im.resize((max(int(w * scale), 1), max(int(h * scale), 1)),
+                               Image.Resampling.LANCZOS)
+
+            buf = BytesIO()
+            im.save(buf, format="JPEG", quality=quality)
+            b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+            return f"data:image/jpeg;base64,{b64}"
+    except (UnidentifiedImageError, FileNotFoundError, OSError):
+        return None

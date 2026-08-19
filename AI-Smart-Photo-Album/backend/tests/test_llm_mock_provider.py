@@ -28,6 +28,22 @@ def test_generate_questions(p):
     assert qs[0]["question_type"] == "choice"
     assert "options" in qs[0]
 
+def test_generate_questions_from_images(p):
+    qs = asyncio.run(p.generate_questions_from_images(
+        ["data:image/jpeg;base64,AAA", "data:image/jpeg;base64,BBB"],
+        count=3, types=["choice"],
+    ))
+    assert len(qs) == 3
+    assert all("stem" in q and "answer" in q for q in qs)
+    assert all("图片" in q["stem"] or "mock" in q["explanation"] for q in qs)
+
+def test_generate_questions_from_images_empty_falls_back(p):
+    qs = asyncio.run(p.generate_questions_from_images(
+        [], count=2, types=["choice"], fallback_text="alpha\nbeta",
+    ))
+    assert len(qs) == 2
+    assert all("options" in q for q in qs)
+
 def test_polish(p):
     r = asyncio.run(p.polish("hello", "polish"))
     assert r.startswith("[polish]")
@@ -41,3 +57,9 @@ def test_embed_deterministic_per_text(p):
     v2 = asyncio.run(p.embed("note-1"))
     assert v1 == v2
     assert len(v1) == 768
+
+def test_cleanup_image_returns_png(p):
+    """Mock provider returns a tiny PNG regardless of input."""
+    png = asyncio.run(p.cleanup_image("data:image/png;base64,AAA"))
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"  # PNG magic bytes
+    assert len(png) > 0

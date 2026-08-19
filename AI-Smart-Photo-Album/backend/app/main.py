@@ -1,4 +1,4 @@
-"""FastAPI 入口：lifespan 跑迁移 + seed + 启 worker；注册异常处理、路由、静态文件。"""
+"""FastAPI 入口：lifespan 跑迁移 + 启 worker；注册异常处理、路由、静态文件。"""
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -8,14 +8,12 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import select
 
 from app.config import settings
 from app.database import engine, run_sql_file
 from app.exceptions import BizException
-from app.models import Category
 from app.models.ai_task import start_worker, stop_worker
-from app.routers import admin_categories, ai, auth, categories, folders, note_ai, note_files, note_search, notes, photos, users
+from app.routers import auth, categories, note_ai, note_files, note_image_cleanup, note_search, notes
 
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL, logging.INFO))
 log = logging.getLogger(__name__)
@@ -23,23 +21,11 @@ log = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """应用生命周期：迁移、建表、seed、启停 worker。"""
-    # 顺序敏感：先建表，再跑增量迁移（003 给 ai_tasks 加 worker 字段）
-    for mig in (
-        "migrations/001_schema.sql",
-        "migrations/003_ai_task_worker.sql",
-        "migrations/004_note_tables.sql",
-    ):
-        if Path(mig).exists():
-            await run_sql_file(mig)
-
-    async with engine.begin() as conn:
-        if (await conn.execute(select(Category).limit(1))).first() is None:
-            log.info("分类字典为空，执行 seed")
-            if Path("migrations/002_seed_categories.sql").exists():
-                await run_sql_file("migrations/002_seed_categories.sql")
-        else:
-            log.info("分类字典已存在，跳过 seed")
+    """应用生命周期：迁移、启停 worker。"""
+    if Path("migrations/004_note_tables.sql").exists():
+        await run_sql_file("migrations/004_note_tables.sql")
+    if Path("migrations/005_mindmap.sql").exists():
+        await run_sql_file("migrations/005_mindmap.sql")
 
     await start_worker()
     yield
@@ -90,7 +76,7 @@ app.mount("/static/exports", StaticFiles(directory=Path(settings.DATA_DIR) / "ex
 app.mount("/static/note_files", StaticFiles(directory=Path(settings.DATA_DIR) / "note_files"), name="note_files")
 app.mount("/static/note_thumbs", StaticFiles(directory=Path(settings.DATA_DIR) / "note_thumbs"), name="note_thumbs")
 
-for r in (auth.router, users.router, photos.router, categories.router, folders.router, notes.router, note_search.router, note_files.router, note_ai.router, ai.router, admin_categories.router):
+for r in (auth.router, categories.router, notes.router, note_search.router, note_files.router, note_ai.router, note_image_cleanup.router):
     app.include_router(r)
 
 

@@ -6,6 +6,7 @@ import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.ai_photo.R;
@@ -38,7 +39,12 @@ public class NoteSearchFragment extends Fragment {
         modeGroup = view.findViewById(R.id.note_search_mode);
         recycler = view.findViewById(R.id.note_search_recycler);
         empty = view.findViewById(R.id.note_search_empty);
-        adapter = new SearchAdapter();
+        adapter = new SearchAdapter(hit -> {
+            Bundle args = new Bundle();
+            args.putLong("noteId", hit.noteId);
+            NavHostFragment.findNavController(NoteSearchFragment.this)
+                .navigate(R.id.action_to_note_detail, args);
+        });
         recycler.setLayoutManager(new LinearLayoutManager(getContext()));
         recycler.setAdapter(adapter);
         view.findViewById(R.id.note_search_btn).setOnClickListener(v -> doSearch());
@@ -76,8 +82,12 @@ public class NoteSearchFragment extends Fragment {
                     SearchResponse data = (SearchResponse) ((Result.Success<?>) r).data;
                     List<SearchHit> hits = data != null && data.hits != null ? data.hits : java.util.Collections.emptyList();
                     adapter.submit(hits);
-                    empty.setVisibility(hits.isEmpty() ? View.VISIBLE : View.GONE);
-                    empty.setText(getString(R.string.search_results_fmt, data == null ? 0 : data.total));
+                    if (hits.isEmpty()) {
+                        empty.setText(R.string.search_results_empty);
+                        empty.setVisibility(View.VISIBLE);
+                    } else {
+                        empty.setVisibility(View.GONE);
+                    }
                 } else {
                     String err = r instanceof Result.Error ? ((Result.Error<?>) r).message : getString(R.string.msg_network_err);
                     Toast.makeText(getContext(), err, Toast.LENGTH_SHORT).show();
@@ -90,7 +100,15 @@ public class NoteSearchFragment extends Fragment {
     }
 
     static class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.VH> {
+        interface OnHitClick { void onHit(SearchHit hit); }
+
         private final List<SearchHit> items = new ArrayList<>();
+        private final OnHitClick onClick;
+
+        SearchAdapter(OnHitClick onClick) {
+            this.onClick = onClick;
+        }
+
         void submit(List<SearchHit> data) {
             items.clear(); if (data != null) items.addAll(data); notifyDataSetChanged();
         }
@@ -104,6 +122,7 @@ public class NoteSearchFragment extends Fragment {
             h.title.setText(hit.title != null ? hit.title : "(无标题)");
             h.snippet.setText(hit.snippet != null ? hit.snippet : "");
             h.score.setText(String.format(java.util.Locale.getDefault(), "%.2f", hit.score));
+            h.itemView.setOnClickListener(v -> onClick.onHit(hit));
         }
         @Override public int getItemCount() { return items.size(); }
         static class VH extends RecyclerView.ViewHolder {

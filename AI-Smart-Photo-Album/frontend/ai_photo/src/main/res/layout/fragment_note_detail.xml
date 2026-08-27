@@ -167,6 +167,24 @@
                     android:textSize="22sp"
                     android:textColor="#888" />
             </LinearLayout>
+
+            <!-- 分类选择 -->
+            <TextView
+                android:id="@+id/categories_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:textSize="13sp"
+                android:textColor="#666"
+                android:text="@string/note_detail_categories_label" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/categories_chip_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                app:singleSelection="false"
+                app:chipSpacingHorizontal="4dp" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

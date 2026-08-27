@@ -15,6 +15,7 @@ class SearchHit(BaseModel):
     """单条搜索结果。"""
 
     noteId: int
+    title: str
     score: float
     snippet: str
     matchedSnippet: str
@@ -23,5 +24,5 @@ class SearchHit(BaseModel):
 class SearchResponse(BaseModel):
     """搜索响应。"""
 
-    list: list[SearchHit]
-    engine: str  # 'semantic' | 'keyword' | 'fallback'
+    hits: list[SearchHit]
+    mode: str  # 'semantic' | 'keyword' | 'fallback'

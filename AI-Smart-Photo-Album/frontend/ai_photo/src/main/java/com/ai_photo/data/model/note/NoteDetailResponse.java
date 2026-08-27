@@ -3,7 +3,7 @@ import java.util.List;
 
 public class NoteDetailResponse {
     public long noteId;
-    public Long folderId;
+    public List<Integer> categories;
     public String title;
     public String textContent;
     public String summary;

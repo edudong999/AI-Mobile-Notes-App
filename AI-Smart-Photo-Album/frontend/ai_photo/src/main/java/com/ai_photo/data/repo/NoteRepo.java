@@ -22,44 +22,27 @@ public class NoteRepo {
     public NoteRepo(Context ctx) { this.db = AppDatabase.get(ctx); }
 
     public NoteDao noteDao() { return db.noteDao(); }
-    public FolderDao folderDao() { return db.folderDao(); }
     public NoteFileDao noteFileDao() { return db.noteFileDao(); }
     public AiJobDao aiJobDao() { return db.aiJobDao(); }
     public EmbeddingMetaDao embeddingMetaDao() { return db.embeddingMetaDao(); }
 
-    // Folders
-    public Result<FolderListResponse> listFolders() {
-        return RetrofitClient.exec(RetrofitClient.api().listFolders());
-    }
-    public Result<FolderCreateResponse> createFolder(String name, String color) {
-        FolderCreateRequest req = new FolderCreateRequest();
-        req.name = name; req.color = color;
-        return RetrofitClient.exec(RetrofitClient.api().createFolder(req));
-    }
-    public Result<Object> updateFolder(long id, String name, String color, Integer sortIndex) {
-        FolderUpdateRequest req = new FolderUpdateRequest();
-        req.name = name; req.color = color; req.sortIndex = sortIndex;
-        return RetrofitClient.exec(RetrofitClient.api().updateFolder(id, req));
-    }
-    public Result<Object> deleteFolder(long id) {
-        return RetrofitClient.exec(RetrofitClient.api().deleteFolder(id));
-    }
-
     // Notes CRUD
-    public Result<NoteListResponse> listNotes(Long folderId, int page, int pageSize) {
-        return RetrofitClient.exec(RetrofitClient.api().listNotes(folderId, page, pageSize));
+    public Result<NoteListResponse> listNotes(Long categoryId, int page, int pageSize) {
+        return RetrofitClient.exec(RetrofitClient.api().listNotes(categoryId, page, pageSize));
     }
     public Result<NoteDetailResponse> getNote(long id) {
         return RetrofitClient.exec(RetrofitClient.api().getNote(id));
     }
-    public Result<NoteCreateResponse> createNote(Long folderId, String title, String textContent) {
+    public Result<NoteCreateResponse> createNote(String title, String textContent, List<Integer> categories) {
         NoteCreateRequest req = new NoteCreateRequest();
-        req.folderId = folderId; req.title = title; req.textContent = textContent;
+        req.title = title; req.textContent = textContent; req.categories = categories;
         return RetrofitClient.exec(RetrofitClient.api().createNote(req));
     }
-    public Result<Object> updateNote(long id, Long folderId, String title, String textContent, Boolean isArchived) {
+    public Result<Object> updateNote(long id, String title, String textContent,
+                                     Boolean isArchived, List<Integer> categories) {
         NoteUpdateRequest req = new NoteUpdateRequest();
-        req.folderId = folderId; req.title = title; req.textContent = textContent; req.isArchived = isArchived;
+        req.title = title; req.textContent = textContent;
+        req.isArchived = isArchived; req.categories = categories;
         return RetrofitClient.exec(RetrofitClient.api().updateNote(id, req));
     }
     public Result<Object> deleteNote(long id) {

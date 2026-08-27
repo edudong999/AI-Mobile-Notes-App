@@ -14,12 +14,13 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.ai_photo.R;
-import com.ai_photo.data.local.FolderEntity;
+import com.ai_photo.data.local.CategoryEntity;
 import com.ai_photo.data.local.NoteEntity;
-import com.ai_photo.data.model.note.FolderListResponse;
-import com.ai_photo.data.model.note.FolderItem;
+import com.ai_photo.data.model.category.CategoryItem;
+import com.ai_photo.data.model.category.CategoryListResponse;
 import com.ai_photo.data.model.note.NoteListResponse;
 import com.ai_photo.data.model.note.NoteListItem;
+import com.ai_photo.data.repo.CategoryRepo;
 import com.ai_photo.data.repo.NoteRepo;
 import com.ai_photo.util.BgExecutor;
 import com.ai_photo.util.Result;
@@ -30,13 +31,14 @@ import java.util.List;
 public class NotesFragment extends Fragment {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private NoteRepo repo;
-    private Spinner folderSpinner;
+    private CategoryRepo catRepo;
+    private Spinner categorySpinner;
     private RecyclerView recycler;
     private SwipeRefreshLayout swipe;
     private TextView empty;
     private NotesAdapter adapter;
-    private final List<FolderEntity> folders = new ArrayList<>();
-    private Long selectedFolderId = null;  // null = "全部"
+    private final List<CategoryEntity> categories = new ArrayList<>();
+    private Long selectedCategoryId = null;  // null = "全部"
     private Runnable poller;
 
     private final ActivityResultLauncher<String> pickNoteImage =
@@ -51,6 +53,12 @@ public class NotesFragment extends Fragment {
     @Override public void onCreate(@Nullable Bundle b) {
         super.onCreate(b);
         repo = new NoteRepo(requireContext());
+        catRepo = new CategoryRepo();
+        // 可选：从 nav-arg 读取 categoryId（由 CategoriesFragment 跳转过来）
+        if (getArguments() != null && getArguments().containsKey("categoryId")) {
+            long cid = getArguments().getLong("categoryId", -1L);
+            if (cid > 0) selectedCategoryId = cid;
+        }
     }
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
@@ -60,7 +68,7 @@ public class NotesFragment extends Fragment {
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle b) {
         super.onViewCreated(view, b);
-        folderSpinner = view.findViewById(R.id.folder_spinner);
+        categorySpinner = view.findViewById(R.id.category_spinner);
         recycler = view.findViewById(R.id.recycler);
         swipe = view.findViewById(R.id.swipe);
         empty = view.findViewById(R.id.empty);
@@ -76,10 +84,15 @@ public class NotesFragment extends Fragment {
         recycler.setLayoutManager(new LinearLayoutManager(getContext()));
         recycler.setAdapter(adapter);
 
-        folderSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        categorySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
-                if (pos == 0) selectedFolderId = null;
-                else if (pos - 1 < folders.size()) selectedFolderId = folders.get(pos - 1).folderId;
+                Long prev = selectedCategoryId;
+                if (pos == 0) selectedCategoryId = null;
+                else if (pos - 1 < categories.size()) selectedCategoryId = categories.get(pos - 1).categoryId;
+                // 选择变化时立即拉一次远端（带 categoryId 过滤），再 refresh 渲染
+                if (prev == null ? selectedCategoryId != null : !prev.equals(selectedCategoryId)) {
+                    pollNotesFromServer();
+                }
                 refresh();
             }
             @Override public void onNothingSelected(AdapterView<?> p) {}
@@ -94,7 +107,7 @@ public class NotesFragment extends Fragment {
 
     @Override public void onResume() {
         super.onResume();
-        pollFoldersFromServer();
+        pollCategoriesFromServer();
         poller = new Runnable() {
             @Override public void run() {
                 refresh();
@@ -116,7 +129,8 @@ public class NotesFragment extends Fragment {
 
     private void refresh() {
         BgExecutor.execute(() -> {
-            List<NoteEntity> list = repo.noteDao().byFolder(selectedFolderId, 200);
+            List<NoteEntity> all = repo.noteDao().recent(200);
+            List<NoteEntity> list = filterByCategory(all, selectedCategoryId);
             final android.app.Activity a = getActivity();
             if (a == null || a.isDestroyed()) return;
             a.runOnUiThread(() -> {
@@ -128,21 +142,36 @@ public class NotesFragment extends Fragment {
         });
     }
 
+    /** 按分类筛选：null=全部；否则匹配 categoriesCsv 中的 id。 */
+    private static List<NoteEntity> filterByCategory(List<NoteEntity> all, Long categoryId) {
+        if (categoryId == null) return all;
+        List<NoteEntity> out = new ArrayList<>();
+        String target = "," + categoryId + ",";
+        for (NoteEntity n : all) {
+            String csv = n.categoriesCsv;
+            if (csv == null || csv.isEmpty()) continue;
+            String wrapped = "," + csv + ",";
+            if (wrapped.contains(target)) out.add(n);
+        }
+        return out;
+    }
+
     @SuppressWarnings("unchecked")
-    private void pollFoldersFromServer() {
+    private void pollCategoriesFromServer() {
         BgExecutor.execute(() -> {
-            Result<?> r = repo.listFolders();
-            if (r instanceof Result.Success) {
-                FolderListResponse data = (FolderListResponse) ((Result.Success<?>) r).data;
+            Result<?> cr = catRepo.list();
+            if (cr instanceof Result.Success) {
+                CategoryListResponse data = (CategoryListResponse) ((Result.Success<?>) cr).data;
                 if (data != null) {
-                    folders.clear();
-                    for (FolderItem it : data.list) {
-                        FolderEntity fe = new FolderEntity();
-                        fe.folderId = it.folderId;
-                        fe.name = it.name;
-                        fe.color = it.color != null ? it.color : "#4A90E2";
-                        fe.sortIndex = it.sortIndex;
-                        folders.add(fe);
+                    categories.clear();
+                    for (CategoryItem it : data.list) {
+                        CategoryEntity ce = new CategoryEntity();
+                        ce.categoryId = it.categoryId;
+                        ce.name = it.name != null ? it.name : "";
+                        ce.color = it.color != null ? it.color : "#4A90E2";
+                        ce.sortIndex = it.sortIndex;
+                        ce.noteCount = it.noteCount;
+                        categories.add(ce);
                     }
                     final android.app.Activity a = getActivity();
                     if (a != null && !a.isDestroyed()) {
@@ -151,19 +180,24 @@ public class NotesFragment extends Fragment {
                 }
             }
         });
-        // also refresh notes list from network
+        // also refresh notes list from network (server-side filter by categoryId)
+        pollNotesFromServer();
+    }
+
+    private void pollNotesFromServer() {
         BgExecutor.execute(() -> {
-            Result<?> nr = repo.listNotes(selectedFolderId, 1, 50);
+            Result<?> nr = repo.listNotes(selectedCategoryId, 1, 50);
             if (nr instanceof Result.Success) {
                 NoteListResponse data = (NoteListResponse) ((Result.Success<?>) nr).data;
                 if (data != null) {
                     for (NoteListItem it : data.list) {
                         NoteEntity ne = new NoteEntity();
                         ne.noteId = it.noteId;
-                        ne.folderId = it.folderId;
+                        ne.categoriesCsv = it.categories == null ? "" : joinIds(it.categories);
                         ne.title = it.title != null ? it.title : "";
                         ne.summary = it.summary != null ? it.summary : "";
                         ne.aiStatus = it.aiStatus != null ? it.aiStatus : "pending";
+                        ne.thumbUrl = it.thumbUrl;
                         ne.updatedAt = parseDate(it.updatedAt);
                         repo.noteDao().upsert(ne);
                     }
@@ -175,11 +209,30 @@ public class NotesFragment extends Fragment {
     private void rebuildSpinner() {
         List<String> labels = new ArrayList<>();
         labels.add(getString(R.string.notes_filter_all));
-        for (FolderEntity f : folders) labels.add(f.name);
+        for (CategoryEntity c : categories) labels.add(c.name);
         ArrayAdapter<String> sa = new ArrayAdapter<>(getContext(),
             android.R.layout.simple_spinner_item, labels);
         sa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        folderSpinner.setAdapter(sa);
+        categorySpinner.setAdapter(sa);
+        // 若已有选定分类（来自 nav-arg），尝试同步下拉位置
+        if (selectedCategoryId != null) {
+            for (int i = 0; i < categories.size(); i++) {
+                if (categories.get(i).categoryId == selectedCategoryId) {
+                    categorySpinner.setSelection(i + 1);
+                    break;
+                }
+            }
+        }
+    }
+
+    private static String joinIds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < ids.size(); i++) {
+            if (i > 0) sb.append(',');
+            sb.append(ids.get(i));
+        }
+        return sb.toString();
     }
 
     private static long parseDate(String iso) {

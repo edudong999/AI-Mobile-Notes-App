@@ -6,12 +6,15 @@ import androidx.room.PrimaryKey;
 @Entity(tableName = "notes")
 public class NoteEntity {
     @PrimaryKey public long noteId;
-    public Long folderId;  // nullable
+    /** Comma-separated category ids (e.g. "1,3,5"). Empty string = uncategorized. */
+    @NonNull public String categoriesCsv = "";
     @NonNull public String title = "";
     @NonNull public String textContent = "";
     @NonNull public String summary = "";
     @NonNull public String aiStatus = "pending"; // pending/processing/done/failed
     public String ocrEngine;
+    public String thumbUrl;
+    public String mindmapJson;
     public boolean isArchived;
     public long updatedAt;   // epoch ms
     public long createdAt;

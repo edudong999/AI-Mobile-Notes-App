@@ -11,6 +11,8 @@ class NoteUpdate(BaseModel):
     title: str | None = None
     textContent: str | None = None
     isArchived: bool | None = None
+    # 整体替换分类：null/缺省 = 不修改；[] = 清空；非空 = 校验后替换。
+    categories: list[int] | None = None
 
 
 class NoteExportRequest(BaseModel):

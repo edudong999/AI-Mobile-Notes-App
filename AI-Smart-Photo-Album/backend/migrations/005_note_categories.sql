@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS note_categories (
 );
 CREATE INDEX IF NOT EXISTS idx_note_categories_category ON note_categories(category_id);
 
--- Drop the old single-folder FK on notes. (Done after data migration: at
--- this point any remaining folder_id values are preserved via a backfill in
--- a follow-up release. For new installs, column is dropped here.)
-ALTER TABLE notes DROP COLUMN folder_id;
+-- Drop the obsolete index that referenced folder_id (idempotent — IF EXISTS).
+-- The column drop itself lives in 004_note_tables.sql where the table is
+-- created, so freshly created notes table already excludes folder_id.
+DROP INDEX IF EXISTS idx_notes_user_folder;

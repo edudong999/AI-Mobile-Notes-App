@@ -26,6 +26,15 @@ async def lifespan(app: FastAPI):
         await run_sql_file("migrations/004_note_tables.sql")
     if Path("migrations/005_mindmap.sql").exists():
         await run_sql_file("migrations/005_mindmap.sql")
+    # Me-tab refactor: rename folders to categories + M:N + file kind.
+    # Each is idempotent — RENAME/CREATE IF NOT EXISTS/ADD COLUMN with DEFAULT
+    # are safe to re-run on existing DBs.
+    if Path("migrations/004_rename_folders_to_categories.sql").exists():
+        await run_sql_file("migrations/004_rename_folders_to_categories.sql")
+    if Path("migrations/005_note_categories.sql").exists():
+        await run_sql_file("migrations/005_note_categories.sql")
+    if Path("migrations/006_note_file_kind.sql").exists():
+        await run_sql_file("migrations/006_note_file_kind.sql")
 
     await start_worker()
     yield

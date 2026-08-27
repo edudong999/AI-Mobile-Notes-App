@@ -8,7 +8,6 @@ import androidx.navigation.ui.NavigationUI;
 import com.ai_photo.AiPhotoApp;
 import com.ai_photo.R;
 import com.ai_photo.ui.login.LoginActivity;
-import com.ai_photo.util.AppMode;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity {
@@ -28,21 +27,20 @@ public class MainActivity extends AppCompatActivity {
         NavController nav = host.getNavController();
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
-        applyModeMenu(bottomNav, nav);
+        NavigationUI.setupWithNavController(bottomNav, nav);
 
         bottomNav.setOnItemReselectedListener(item -> {
-            // No-op: default behavior of popping to start is sufficient
+            // Reselecting the active tab pops back to the start destination of the
+            // associated graph (e.g. note detail → notes list).
+            nav.popBackStack(item.getItemId(), false);
         });
     }
 
-    public void applyModeMenu(BottomNavigationView bottomNav, NavController nav) {
-        AppMode mode = AppMode.current(this);
-        bottomNav.getMenu().clear();
-        if (mode == AppMode.NOTE) {
-            bottomNav.inflateMenu(R.menu.bottom_nav_note);
-        } else {
-            bottomNav.inflateMenu(R.menu.bottom_nav_photo);
+    @Override protected void onResume() {
+        super.onResume();
+        if (!AiPhotoApp.get().session().isLoggedIn()) {
+            startActivity(new android.content.Intent(this, LoginActivity.class));
+            finish();
         }
-        NavigationUI.setupWithNavController(bottomNav, nav);
     }
 }

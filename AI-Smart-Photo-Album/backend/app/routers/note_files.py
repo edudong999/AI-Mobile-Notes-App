@@ -1,7 +1,7 @@
 """笔记文件上传 / 删除路由。"""
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -18,12 +18,16 @@ router = APIRouter(prefix="/api/v1/note-files", tags=["note-files"])
 
 @router.post("/upload")
 async def upload(
-    noteId: int | None = None,
+    noteId: int | None = Form(None),
     files: list[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """上传一个或多个文件到笔记；noteId 为空则自动建新 note。"""
+    """上传一个或多个文件到笔记；noteId 为空则自动建新 note。
+
+    必须用 Form(...) 显式声明 noteId —— multipart 字段不会被当成 query 解析，
+    否则 Android 端发的 noteId part 会被忽略，导致标题与图片落到不同笔记。
+    """
     payload = []
     for f in files:
         data = await f.read()

@@ -411,7 +411,6 @@
     <string name="category_photo_count_format">%1$d 张</string>
 
     <!-- ====== AI 队列 ====== -->
-    <string name="ai_status_format">已完成 %1$d / 待处理 %2$d（共 %3$d）</string>
     <string name="ai_note">提示：已加入队列的任务会在后端 AI worker 日志中查看。</string>
 
     <!-- 队列顶部汇总 -->
@@ -468,7 +467,13 @@
     <!-- ====== 笔记模式导航 ====== -->
     <string name="nav_notes">笔记</string>
     <string name="nav_search">搜索</string>
-    <string name="nav_folders">文件夹</string>
+    <string name="nav_me">我的</string>
+
+    <!-- ====== "我的" 页 (Task 19) ====== -->
+    <string name="me_row_settings">设置</string>
+    <string name="me_row_categories">分类管理</string>
+    <string name="me_row_about">关于</string>
+    <string name="about_version_placeholder">版本 1.0</string>
 
     <!-- ====== 笔记模块 (Task 17) ====== -->
     <string name="notes_empty">还没有笔记</string>
@@ -547,7 +552,18 @@
 
     <!-- ====== Task 19 - Capture / Folders / Questions ====== -->
     <string name="capture_title_label">新建笔记</string>
-    <string name="capture_label_folder">选择文件夹</string>
+    <string name="capture_label_category">选择分类</string>
+    <string name="note_detail_categories_label">分类（多选）</string>
+    <string name="photo_cleanup_fab_cd">图片去污/清晰化</string>
+    <string name="photo_cleanup_running">AI 正在去除手写污渍 / 修正模糊…</string>
+    <string name="photo_cleanup_failed_fmt">处理失败：%1$s</string>
+    <string name="photo_cleanup_compare_title">对比：原图 vs AI 清理</string>
+    <string name="photo_cleanup_compare_original">原图</string>
+    <string name="photo_cleanup_compare_cleaned">AI 清理</string>
+    <string name="photo_cleanup_apply">应用此结果</string>
+    <string name="photo_cleanup_discard">放弃并删除</string>
+    <string name="photo_cleanup_applied">已替换为清理结果</string>
+    <string name="photo_cleanup_discarded">已删除清理结果</string>
     <string name="capture_title_hint">笔记标题…</string>
     <string name="capture_btn_pick">从相册</string>
     <string name="capture_btn_camera">拍照</string>
@@ -560,11 +576,14 @@
     <string name="btn_delete">删除</string>
 
     <string name="folder_manage_title">文件夹管理</string>
-    <string name="folder_create_title">新建文件夹</string>
-    <string name="folder_edit_title">编辑文件夹</string>
-    <string name="folder_delete_title">删除文件夹</string>
-    <string name="folder_delete_msg">确定删除 \"%1$s\"？笔记不会被删除。</string>
-    <string name="folder_name_hint">文件夹名…</string>
+    <string name="category_manage_title">分类管理</string>
+    <string name="category_create_title">新建分类</string>
+    <string name="category_edit_title">编辑分类</string>
+    <string name="category_delete_title">删除分类</string>
+    <string name="category_delete_msg">确定删除 \"%1$s\"？笔记不会被删除。</string>
+    <string name="category_name_hint">分类名…</string>
+    <string name="folder_create_title">@string/category_create_title</string>
+    <string name="folder_name_hint">@string/category_name_hint</string>
 
     <string name="question_bank_title">题库</string>
     <string name="questions_empty">还没有题目</string>

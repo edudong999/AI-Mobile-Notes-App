@@ -37,11 +37,16 @@ async def get_note(db: AsyncSession, note_id: int, user_id: int) -> Note:
 
 async def list_notes(db: AsyncSession, user_id: int,
                      page: int = 1, page_size: int = 20,
-                     archived: bool | None = None) -> tuple[list[Note], int]:
-    """分页列出当前用户的笔记，支持按归档过滤。"""
+                     archived: bool | None = None,
+                     category_id: int | None = None) -> tuple[list[Note], int]:
+    """分页列出当前用户的笔记，支持按归档/分类过滤。"""
     base = [Note.user_id == user_id, Note.deleted_at.is_(None)]
     if archived is not None:
         base.append(Note.is_archived == (1 if archived else 0))
+    if category_id is not None:
+        base.append(Note.note_id.in_(
+            select(NoteCategory.note_id).where(NoteCategory.category_id == category_id)
+        ))
 
     total = (await db.execute(
         select(func.count(Note.note_id)).where(*base)
@@ -57,8 +62,14 @@ async def list_notes(db: AsyncSession, user_id: int,
 async def update_note(db: AsyncSession, note_id: int, user_id: int,
                       title: str | None = None,
                       text_content: str | None = None,
-                      is_archived: bool | None = None) -> Note:
-    """增量更新笔记字段。text_content 修改会重置 AI 状态为 pending。"""
+                      is_archived: bool | None = None,
+                      category_ids: list[int] | None = None) -> Note:
+    """增量更新笔记字段。text_content 修改会重置 AI 状态为 pending。
+    category_ids 若提供则整体替换笔记的分类集合（None = 不动）。"""
+    # Lazy import to avoid a circular reference at module-load time
+    # (note_category_service imports Note).
+    from app.services.note_category_service import set_note_categories
+
     n = await get_note(db, note_id, user_id)
     if title is not None:
         n.title = title
@@ -68,6 +79,9 @@ async def update_note(db: AsyncSession, note_id: int, user_id: int,
             n.ai_status = AIStatus.pending
     if is_archived is not None:
         n.is_archived = 1 if is_archived else 0
+    if category_ids is not None:
+        # 复用 set_note_categories 校验 + 替换 + commit 逻辑
+        await set_note_categories(db, note_id, user_id, category_ids)
     await db.commit()
     await db.refresh(n)
     return n

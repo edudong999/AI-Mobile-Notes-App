@@ -24,7 +24,7 @@ public class NoteAiActions {
             Result<PolishResponse> r = repo.polish(noteId, action, text);
             if (r instanceof Result.Success) {
                 PolishResponse d = (PolishResponse) ((Result.Success<?>) r).data;
-                runOnMain(() -> cb.onResult(d != null && d.polished != null ? d.polished : text));
+                runOnMain(() -> cb.onResult(d != null && d.result != null ? d.result : text));
             } else { runOnMain(() -> cb.onError(err(r))); }
         });
     }
@@ -34,7 +34,7 @@ public class NoteAiActions {
             Result<TranslateResponse> r = repo.translate(noteId, targetLang, text);
             if (r instanceof Result.Success) {
                 TranslateResponse d = (TranslateResponse) ((Result.Success<?>) r).data;
-                runOnMain(() -> cb.onResult(d != null && d.translated != null ? d.translated : text));
+                runOnMain(() -> cb.onResult(d != null && d.result != null ? d.result : text));
             } else { runOnMain(() -> cb.onError(err(r))); }
         });
     }

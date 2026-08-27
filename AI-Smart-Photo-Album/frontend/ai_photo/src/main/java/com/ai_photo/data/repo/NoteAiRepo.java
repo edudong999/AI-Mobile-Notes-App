@@ -31,7 +31,9 @@ public class NoteAiRepo {
         req.noteId = noteId;
         return RetrofitClient.exec(RetrofitClient.api().aiSummary(req));
     }
-    public Result<NoteAiStatusResponse> status() {
-        return RetrofitClient.exec(RetrofitClient.api().aiNoteStatus());
+    public Result<MindmapResponse> mindmap(long noteId, int maxDepth) {
+        MindmapRequest req = new MindmapRequest();
+        req.noteId = noteId; req.maxDepth = maxDepth;
+        return RetrofitClient.exec(RetrofitClient.api().aiMindmap(req));
     }
 }

@@ -9,11 +9,7 @@
         android:icon="@android:drawable/ic_menu_search"
         android:title="@string/nav_search" />
     <item
-        android:id="@+id/aiQueueFragment"
-        android:icon="@android:drawable/ic_menu_recent_history"
-        android:title="@string/nav_ai" />
-    <item
-        android:id="@+id/profileFragment"
-        android:icon="@android:drawable/ic_menu_compass"
+        android:id="@+id/meFragment"
+        android:icon="@android:drawable/ic_menu_myplaces"
         android:title="@string/nav_me" />
 </menu>

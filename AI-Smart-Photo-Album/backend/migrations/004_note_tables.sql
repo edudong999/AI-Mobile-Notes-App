@@ -1,12 +1,24 @@
 -- 004_note_tables.sql
--- 笔记模块 5 张表 + ai_tasks 扩展 kind/note_id/sub_kind。
+-- 笔记模块 5 张表 + users（替代旧 photo 模式删除的 001）+ ai_tasks 重建。
 -- 与 001/003 一致：SQLite，全 TEXT/INTEGER + CHECK + DEFAULT CURRENT_TIMESTAMP，
--- IF NOT EXISTS / ALTER TABLE ADD COLUMN 兼容已有库。
+-- IF NOT EXISTS 兼容已有库。
+
+-- users：注册/登录依赖
+CREATE TABLE IF NOT EXISTS users (
+  user_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  username       TEXT NOT NULL UNIQUE,
+  password_hash  TEXT NOT NULL,
+  email          TEXT UNIQUE,
+  avatar_url     TEXT,
+  status         INTEGER NOT NULL DEFAULT 1,
+  last_login_at  TEXT,
+  created_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 CREATE TABLE IF NOT EXISTS notes (
   note_id        INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id        INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-  folder_id      INTEGER REFERENCES notebook_folders(folder_id) ON DELETE SET NULL,
   title          TEXT NOT NULL DEFAULT '',
   text_content   TEXT NOT NULL DEFAULT '',
   summary        TEXT NOT NULL DEFAULT '',
@@ -18,11 +30,12 @@ CREATE TABLE IF NOT EXISTS notes (
   updated_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   deleted_at     TEXT
 );
-CREATE INDEX IF NOT EXISTS idx_notes_user_folder ON notes(user_id, folder_id, deleted_at);
+-- idx_notes_user_folder dropped: folder_id was dropped by 005_note_categories.
+-- 005_note_categories.sql drops the index if it still exists.
 CREATE INDEX IF NOT EXISTS idx_notes_user_updated ON notes(user_id, updated_at DESC);
 
-CREATE TABLE IF NOT EXISTS notebook_folders (
-  folder_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE IF NOT EXISTS categories (
+  category_id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id     INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
   name        TEXT NOT NULL,
   color       TEXT NOT NULL DEFAULT '#4A90E2',
@@ -69,7 +82,23 @@ CREATE TABLE IF NOT EXISTS note_embeddings (
   created_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-ALTER TABLE ai_tasks ADD COLUMN kind TEXT NOT NULL DEFAULT 'photo';
-ALTER TABLE ai_tasks ADD COLUMN note_id INTEGER REFERENCES notes(note_id) ON DELETE CASCADE;
-ALTER TABLE ai_tasks ADD COLUMN sub_kind TEXT;
-CREATE INDEX IF NOT EXISTS idx_ai_tasks_kind ON ai_tasks(kind, status);
+-- ai_tasks：笔记 AI 任务队列（替代旧 photo 任务的统一队列）
+CREATE TABLE IF NOT EXISTS ai_tasks (
+  task_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  note_id        INTEGER REFERENCES notes(note_id) ON DELETE CASCADE,
+  kind           TEXT NOT NULL DEFAULT 'note',
+  sub_kind       TEXT,
+  status         TEXT NOT NULL DEFAULT 'queued'
+                   CHECK (status IN ('queued','processing','succeeded','failed')),
+  error_message  TEXT,
+  created_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  retry_count    INTEGER NOT NULL DEFAULT 0,
+  max_retries    INTEGER NOT NULL DEFAULT 3,
+  next_retry_at  TEXT,
+  claimed_at     TEXT,
+  claimed_by     TEXT,
+  heartbeat_at   TEXT,
+  finished_at    TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_ai_tasks_note ON ai_tasks(note_id);
+CREATE INDEX IF NOT EXISTS idx_ai_tasks_status ON ai_tasks(status, next_retry_at);

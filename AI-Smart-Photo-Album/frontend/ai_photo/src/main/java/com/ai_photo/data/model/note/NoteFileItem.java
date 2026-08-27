@@ -7,4 +7,6 @@ public class NoteFileItem {
     public Integer width;
     public Integer height;
     public int sortIndex;
+    public String kind = "original";
+    public Long parentFileId;
 }

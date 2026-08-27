@@ -6,7 +6,7 @@
 - 心跳：处理中定期写 heartbeat_at
 - 恢复：启动时 claimed_at < now()-120s 的 processing 视为 orphan，重置回 queued
 - 唤醒：notify_new_task() 通过 _wakeup Event 退出 idle poll
-- kind 调度：photo → analyze_photo；note → _process_note(note_id, sub_kind)
+- sub_kind 调度：见 _process_note
 """
 from __future__ import annotations
 
@@ -23,7 +23,6 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
-    delete,
     func,
     or_,
     select,
@@ -32,7 +31,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import AsyncSessionLocal, Base
-from app.models.photo import AnalysisStatus, Photo
+from app.models.note import AIStatus, Note
 from app.utils.time import utcnow_naive
 
 log = logging.getLogger(__name__)
@@ -62,9 +61,8 @@ class AITaskStatus(str, enum.Enum):
 
 
 class JobKind(str, enum.Enum):
-    """任务主类型：photo（图片 AI 分析）或 note（笔记 AI 处理）。"""
+    """任务主类型：note（笔记 AI 处理）。"""
 
-    photo = "photo"
     note = "note"
 
 
@@ -83,11 +81,6 @@ class AITask(Base):
     __tablename__ = "ai_tasks"
 
     task_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    photo_id: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        ForeignKey("photos.photo_id", ondelete="CASCADE"),
-        nullable=True,
-    )
     note_id: Mapped[Optional[int]] = mapped_column(
         Integer,
         ForeignKey("notes.note_id", ondelete="CASCADE"),
@@ -96,7 +89,7 @@ class AITask(Base):
     kind: Mapped[JobKind] = mapped_column(
         SAEnum(JobKind, name="ai_task_kind"),
         nullable=False,
-        default=JobKind.photo,
+        default=JobKind.note,
     )
     sub_kind: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     status: Mapped[AITaskStatus] = mapped_column(
@@ -108,7 +101,6 @@ class AITask(Base):
     created_at: Mapped[DateTime] = mapped_column(
         DateTime, nullable=False, server_default=func.current_timestamp()
     )
-    # 003 migration 新增字段
     retry_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     max_retries: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
     next_retry_at: Mapped[Optional[DateTime]] = mapped_column(DateTime, nullable=True)
@@ -121,12 +113,7 @@ class AITask(Base):
 # ---------- Claim 形状 ----------
 # _claim / _process_one / _on_failure 之间约定的字典结构。
 
-Claim = dict[str, Any]  # keys: task_id, kind, photo_id, note_id, sub_kind
-
-
-def _claim_to_photo_id(claim: Claim) -> int:
-    """供旧测试 / photo 路径使用的便捷取值。"""
-    return claim["photo_id"]
+Claim = dict[str, Any]  # keys: task_id, note_id, sub_kind
 
 
 # ---------- 模块内单例 ----------
@@ -229,23 +216,13 @@ async def _claim_task_id_for(
 async def _on_failure(claim: Claim, error_message: str) -> None:
     """单次任务失败：retry_count < max_retries 则退避重试，否则置 failed。
 
-    claim 必须含 kind + (photo_id 或 note_id)，否则无法定位失败上下文。
+    claim 必须含 note_id，否则无法定位失败上下文。
     """
     now = utcnow_naive()
     async with AsyncSessionLocal() as db:
         task = await _latest_task_for_claim(db, claim)
         if task is None:
             return
-
-        photo = None
-        note = None
-        kind = claim.get("kind")
-        if kind == JobKind.note and claim.get("note_id") is not None:
-            from app.models import AIStatus, Note
-            note = await db.get(Note, claim["note_id"])
-        elif claim.get("photo_id") is not None:
-            # kind=photo 或 kind 缺省（向后兼容旧测试）：都走 photo 失败回写
-            photo = await db.get(Photo, claim["photo_id"])
 
         if task.retry_count < task.max_retries:
             new_retry_count = task.retry_count + 1
@@ -257,10 +234,8 @@ async def _on_failure(claim: Claim, error_message: str) -> None:
             task.claimed_by = None
             task.heartbeat_at = None
             task.error_message = error_message
-            if photo is not None:
-                photo.analysis_status = AnalysisStatus.pending
+            note = await db.get(Note, claim["note_id"])
             if note is not None:
-                from app.models import AIStatus
                 note.ai_status = AIStatus.pending
         else:
             task.status = AITaskStatus.failed
@@ -269,10 +244,8 @@ async def _on_failure(claim: Claim, error_message: str) -> None:
             task.claimed_at = None
             task.claimed_by = None
             task.heartbeat_at = None
-            if photo is not None:
-                photo.analysis_status = AnalysisStatus.failed
+            note = await db.get(Note, claim["note_id"])
             if note is not None:
-                from app.models import AIStatus
                 note.ai_status = AIStatus.failed
         await db.commit()
 
@@ -281,19 +254,12 @@ async def _latest_task_for_claim(
     db: AsyncSession, claim: Claim
 ) -> Optional[AITask]:
     """根据 claim 取最近一条 AITask。"""
-    if claim.get("kind") == JobKind.note and claim.get("note_id") is not None:
-        return (await db.execute(
-            select(AITask)
-            .where(AITask.note_id == claim["note_id"])
-            .order_by(AITask.created_at.desc())
-            .limit(1)
-        )).scalars().first()
-    # 默认 photo 路径（含 kind=photo 或 kind 缺失）
-    if claim.get("photo_id") is None:
+    note_id = claim.get("note_id")
+    if note_id is None:
         return None
     return (await db.execute(
         select(AITask)
-        .where(AITask.photo_id == claim["photo_id"])
+        .where(AITask.note_id == note_id)
         .order_by(AITask.created_at.desc())
         .limit(1)
     )).scalars().first()
@@ -364,8 +330,7 @@ class AIWorker:
     async def _claim(self, n: int = CLAIM_BATCH_SIZE) -> list[Claim]:
         """原子抢占最多 n 个 queued 任务，返回 claim 字典列表。
 
-        每个 dict 含 task_id / kind / photo_id / note_id / sub_kind。
-        旧测试通过 claim["photo_id"] 取 photo_id（见 _claim_to_photo_id）。
+        每个 dict 含 task_id / note_id / sub_kind。
         """
         now = utcnow_naive()
         async with AsyncSessionLocal() as db:
@@ -395,8 +360,6 @@ class AIWorker:
                 )
                 .returning(
                     AITask.task_id,
-                    AITask.kind,
-                    AITask.photo_id,
                     AITask.note_id,
                     AITask.sub_kind,
                 )
@@ -405,12 +368,10 @@ class AIWorker:
             return [
                 {
                     "task_id": task_id,
-                    "kind": kind,
-                    "photo_id": photo_id,
                     "note_id": note_id,
                     "sub_kind": sub_kind,
                 }
-                for (task_id, kind, photo_id, note_id, sub_kind) in rows
+                for (task_id, note_id, sub_kind) in rows
             ]
 
     # --- 主循环与单任务处理 ---
@@ -441,118 +402,24 @@ class AIWorker:
                     pass
 
     async def _process_one(self, claim: Claim) -> None:
-        """处理单个 claim：photo 走 analyze_photo，note 走 _process_note。
+        """处理单个 claim：note 走 _process_note。
 
         失败由 _on_failure 统一处理（重试或置 failed）。
         """
         try:
-            kind = claim.get("kind")
-            if kind == JobKind.note and claim.get("note_id") is not None:
-                await _process_note(
-                    note_id=claim["note_id"],
-                    sub_kind=claim.get("sub_kind") or "",
-                )
-                await self._mark_task_succeeded(claim)
-                return
-
-            # photo 路径（kind=photo 或 kind 缺省，保持向后兼容）
-            photo_id = claim.get("photo_id")
-            if photo_id is None:
-                raise RuntimeError(f"claim {claim} missing photo_id")
-            await self._process_one_photo(photo_id)
+            note_id = claim.get("note_id")
+            if note_id is None:
+                raise RuntimeError(f"claim {claim} missing note_id")
+            await _process_note(
+                note_id=note_id,
+                sub_kind=claim.get("sub_kind") or "",
+            )
             await self._mark_task_succeeded(claim)
         except Exception as e:
             await _on_failure(claim, f"{type(e).__name__}: {e}")
 
-    async def _process_one_photo(self, photo_id: int) -> None:
-        """单张照片的完整处理：调 AI → 写 PhotoAIAnalysis + 标签 + 任务状态。"""
-        async with AsyncSessionLocal() as db:
-            photo = await db.get(Photo, photo_id)
-            if photo is None or not photo.original_path:
-                raise RuntimeError(f"photo {photo_id} missing or no original_path")
-            photo_path = photo.original_path
-
-        # 调 AI（mock/real 由 AI_SERVICE 决定）
-        from app.services.ai import analyze_photo
-        result = await analyze_photo(photo_path, photo_id)
-
-        # 写库：analysis + ai-source categories + photo status done
-        async with AsyncSessionLocal() as db:
-            from app.models.category import Category, CategoryType
-            from app.models.photo_ai_analysis import PhotoAIAnalysis
-            from app.models.photo_category import CategorySource, PhotoCategory
-
-            scene_cat = (await db.execute(
-                select(Category).where(
-                    Category.name == result.scene_category_name,
-                    Category.type == CategoryType.scene,
-                )
-            )).scalars().first() if result.scene_category_name else None
-            emotion_cat = (await db.execute(
-                select(Category).where(
-                    Category.name == result.emotion_category_name,
-                    Category.type == CategoryType.emotion,
-                )
-            )).scalars().first() if result.emotion_category_name else None
-
-            analysis_row = await db.get(PhotoAIAnalysis, photo_id)
-            if analysis_row is None:
-                analysis_row = PhotoAIAnalysis(photo_id=photo_id)
-                db.add(analysis_row)
-            analysis_row.description = result.description
-            analysis_row.dominant_scene_id = scene_cat.category_id if scene_cat else None
-            analysis_row.scene_confidence = result.scene_confidence
-            analysis_row.dominant_emotion_id = emotion_cat.category_id if emotion_cat else None
-            analysis_row.emotion_confidence = result.emotion_confidence
-            analysis_row.analyzed_at = utcnow_naive()
-
-            # 替换 ai 源标签；保留 user 源
-            await db.execute(
-                delete(PhotoCategory).where(
-                    PhotoCategory.photo_id == photo_id,
-                    PhotoCategory.source == CategorySource.ai,
-                )
-            )
-            if scene_cat is not None:
-                db.add(PhotoCategory(
-                    photo_id=photo_id,
-                    category_id=scene_cat.category_id,
-                    confidence=result.scene_confidence,
-                    source=CategorySource.ai,
-                    is_primary=1,
-                ))
-            if emotion_cat is not None:
-                db.add(PhotoCategory(
-                    photo_id=photo_id,
-                    category_id=emotion_cat.category_id,
-                    confidence=result.emotion_confidence,
-                    source=CategorySource.ai,
-                    is_primary=0,
-                ))
-            for tag_name, tag_conf in result.tag_category_names:
-                tag_cat = (await db.execute(
-                    select(Category).where(
-                        Category.name == tag_name,
-                        Category.type == CategoryType.tag,
-                    )
-                )).scalars().first()
-                if tag_cat is not None:
-                    db.add(PhotoCategory(
-                        photo_id=photo_id,
-                        category_id=tag_cat.category_id,
-                        confidence=tag_conf,
-                        source=CategorySource.ai,
-                        is_primary=0,
-                    ))
-
-            photo = await db.get(Photo, photo_id)
-            if photo is not None:
-                photo.analysis_status = AnalysisStatus.done
-
-            await db.commit()
-
     async def _mark_task_succeeded(self, claim: Claim) -> None:
-        """把 claim 对应的 AITask 置为 succeeded（不触碰 photo/note 字段）。"""
+        """把 claim 对应的 AITask 置为 succeeded（不触碰 note 字段）。"""
         async with AsyncSessionLocal() as db:
             task = await _latest_task_for_claim(db, claim)
             if task is None:

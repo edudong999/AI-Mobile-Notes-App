@@ -16,6 +16,9 @@ public interface AiJobDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsertAll(List<AiJobEntity> js);
 
+    @Query("DELETE FROM ai_jobs WHERE noteId = :noteId")
+    void deleteByNote(long noteId);
+
     @Query("DELETE FROM ai_jobs")
     void clear();
 }

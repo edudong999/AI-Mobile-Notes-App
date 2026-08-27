@@ -11,10 +11,10 @@ from pathlib import Path
 from sqlalchemy import delete as sa_delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
 from app.exceptions import BizException
 from app.models import AIStatus, AITask, JobKind, Note, NoteFile, NoteQuestion
 from app.services import llm
+from app.utils.image import to_jpeg_data_uri
 
 
 # ---------- 队列入口 ----------
@@ -51,12 +51,28 @@ async def run_ocr(db: AsyncSession, note_id: int) -> dict:
     merged_text: list[str] = []
     key_points: list[str] = []
 
-    public_base = getattr(settings, "PUBLIC_BASE_URL", "") or ""
+    # DashScope 等远程 LLM 没法访问内网 /static，必须把图片读出来
+    # 转 base64 内联过去。MockProvider 同样接受 data URI。
     for f in files[:5]:
-        url = f"/static/note_files/{Path(f.original_path).name}"
-        full = f"{public_base}{url}" if public_base else url
-        result = await provider.analyze_image(full, "")
-        merged_text.append(result.get("ocr_text", ""))
+        src = Path(f.original_path)
+        if not src.exists():
+            continue
+        data_uri = to_jpeg_data_uri(src)
+        if not data_uri:
+            continue
+        result = await provider.analyze_image(data_uri, "")
+        # 优先用 description（对风景/物体图片也能给文字），
+        # OCR 文字作为补充一起写到 text_content
+        parts: list[str] = []
+        desc = (result.get("description") or "").strip()
+        ocr = (result.get("ocr_text") or "").strip()
+        if desc:
+            parts.append(desc)
+        if ocr:
+            parts.append(ocr)
+        if not parts:
+            parts.append("（未识别到内容）")
+        merged_text.append("\n".join(parts))
         key_points.extend(result.get("key_points", []) or [])
 
     text = "\n\n".join(merged_text)
@@ -84,15 +100,42 @@ async def run_summary(db: AsyncSession, note_id: int) -> str:
 async def run_questions(
     db: AsyncSession, note_id: int, count: int, types: list[str] | None
 ) -> list[NoteQuestion]:
-    """基于 text_content 生成题目；先清空旧题再插入新题。"""
+    """基于笔记附图生成题目；无图时回退到 text_content。
+
+    出题的目标是「分析图片中的题目/知识点后出相关题」，
+    所以优先级：note_files 多模态 > text_content 文本。
+    """
     n = await db.get(Note, note_id)
     if n is None:
         raise BizException(404, "笔记不存在")
 
     provider = llm.get_provider()
-    raw = await provider.generate_questions(
-        n.text_content or "", count=count, types=types
-    )
+
+    # 收集附图 data URI（最多 5 张，与 OCR 一致）
+    files = list((await db.execute(
+        select(NoteFile)
+        .where(NoteFile.note_id == note_id)
+        .order_by(NoteFile.sort_index, NoteFile.file_id)
+    )).scalars().all())
+
+    images: list[str] = []
+    for f in files[:5]:
+        src = Path(f.original_path)
+        if not src.exists():
+            continue
+        data_uri = to_jpeg_data_uri(src)
+        if data_uri:
+            images.append(data_uri)
+
+    if images:
+        raw = await provider.generate_questions_from_images(
+            images, count=count, types=types,
+            fallback_text=n.text_content or "",
+        )
+    else:
+        raw = await provider.generate_questions(
+            n.text_content or "", count=count, types=types
+        )
 
     await db.execute(sa_delete(NoteQuestion).where(NoteQuestion.note_id == note_id))
     out: list[NoteQuestion] = []
@@ -134,3 +177,21 @@ async def run_translate(
     src = text if text is not None else (n.text_content or "")
     provider = llm.get_provider()
     return await provider.translate(src, target_lang)
+
+
+async def run_mindmap(
+    db: AsyncSession, note_id: int, max_depth: int = 3,
+) -> dict:
+    """基于笔记生成思维导图树，写入 notes.mindmap_json。"""
+    n = await db.get(Note, note_id)
+    if n is None:
+        raise BizException(404, "笔记不存在")
+    content = (n.text_content or n.summary or "").strip()
+    if not content and not (n.title or "").strip():
+        raise BizException(400, "笔记无内容，无法生成思维导图")
+    provider = llm.get_provider()
+    tree = await provider.generate_mindmap(n.title, content, max_depth=max_depth)
+    n.mindmap_json = json.dumps(tree, ensure_ascii=False)
+    n.ai_status = AIStatus.done
+    await db.commit()
+    return tree

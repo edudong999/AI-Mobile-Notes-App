@@ -1,22 +1,19 @@
 package com.ai_photo.data.api;
 
 import com.ai_photo.data.model.Envelope;
-import com.ai_photo.data.model.admin.*;
-import com.ai_photo.data.model.ai.*;
 import com.ai_photo.data.model.auth.*;
 import com.ai_photo.data.model.category.*;
 import com.ai_photo.data.model.note.*;
 import com.ai_photo.data.model.note_ai.*;
+import com.ai_photo.data.model.note_image_cleanup.*;
 import com.ai_photo.data.model.note_search.*;
-import com.ai_photo.data.model.photo.*;
-import com.ai_photo.data.model.user.*;
 import okhttp3.MultipartBody;
 import retrofit2.Call;
 import retrofit2.http.*;
 
 import java.util.List;
 
-/** All 47 backend endpoints from docs/interface.md. */
+/** Note endpoints backing the 7 AI Note Assistant capabilities. */
 public interface ApiService {
 
     // ===== Auth (3) =====
@@ -29,106 +26,29 @@ public interface ApiService {
     @POST("api/v1/auth/logout")
     Call<Envelope<Object>> logout();
 
-    // ===== Users (3) =====
-    @GET("api/v1/users/me")
-    Call<Envelope<UserMeResponse>> me();
-
-    @GET("api/v1/users/me/statistics")
-    Call<Envelope<StatisticsResponse>> statistics();
-
-    @GET("api/v1/users/me/favorites")
-    Call<Envelope<FavoriteResponse>> favorites(@Query("page") int page, @Query("pageSize") int pageSize);
-
-    // ===== Photos (12) =====
-    @Multipart
-    @POST("api/v1/photos/upload")
-    Call<Envelope<PhotoUploadResponse>> uploadPhotos(@Part List<MultipartBody.Part> files);
-
-    @GET("api/v1/photos")
-    Call<Envelope<PhotoListResponse>> listPhotos(@Query("page") int page, @Query("pageSize") int pageSize);
-
-    @GET("api/v1/photos/recent")
-    Call<Envelope<PhotoRecentResponse>> recentPhotos(@Query("limit") int limit);
-
-    @GET("api/v1/photos/{id}")
-    Call<Envelope<PhotoDetailResponse>> photoDetail(@Path("id") long id);
-
-    @PATCH("api/v1/photos/{id}")
-    Call<Envelope<Object>> updatePhoto(@Path("id") long id, @Body PhotoUpdateRequest req);
-
-    @HTTP(method = "DELETE", path = "api/v1/photos/batch", hasBody = true)
-    Call<Envelope<BatchDeleteResponse>> deleteBatch(@Body BatchDeleteRequest req);
-
-    @DELETE("api/v1/photos/{id}")
-    Call<Envelope<Object>> deletePhoto(@Path("id") long id);
-
-    @POST("api/v1/photos/{id}/favorite")
-    Call<Envelope<Object>> favorite(@Path("id") long id);
-
-    @DELETE("api/v1/photos/{id}/favorite")
-    Call<Envelope<Object>> unfavorite(@Path("id") long id);
-
-    @POST("api/v1/photos/search")
-    Call<Envelope<com.ai_photo.data.model.photo.SearchResponse>> search(
-        @Body com.ai_photo.data.model.photo.SearchRequest req);
-
-    @POST("api/v1/photos/filter")
-    Call<Envelope<com.ai_photo.data.model.photo.SearchResponse>> filter(@Body FilterRequest req);
-
-    // ===== Categories (3) =====
-    @GET("api/v1/categories/preview")
-    Call<Envelope<CategoryPreviewResponse>> previewCategories(@Query("previewSize") int size);
-
+    // ===== Categories (6) =====
     @GET("api/v1/categories")
-    Call<Envelope<CategoryListResponse>> listCategories(@Query("type") String type);
+    Call<Envelope<CategoryListResponse>> listCategories();
 
-    @GET("api/v1/categories/{id}/photos")
-    Call<Envelope<CategoryPhotosResponse>> categoryPhotos(
-        @Path("id") long id, @Query("page") int page, @Query("pageSize") int pageSize);
+    @POST("api/v1/categories")
+    Call<Envelope<CategoryCreateResponse>> createCategory(@Body CategoryCreateRequest req);
 
-    // ===== AI (3) =====
-    @GET("api/v1/ai/status")
-    Call<Envelope<AiStatusResponse>> aiStatus();
+    @PATCH("api/v1/categories/{id}")
+    Call<Envelope<Object>> updateCategory(@Path("id") long id, @Body CategoryUpdateRequest req);
 
-    @GET("api/v1/ai/queue")
-    Call<Envelope<AiQueueResponse>> aiQueue();
+    @DELETE("api/v1/categories/{id}")
+    Call<Envelope<Object>> deleteCategory(@Path("id") long id);
 
-    @POST("api/v1/ai/reanalyze")
-    Call<Envelope<ReanalyzeResponse>> reanalyze(@Body ReanalyzeRequest req);
+    @POST("api/v1/categories/reorder")
+    Call<Envelope<Object>> reorderCategory(@Body CategoryReorderRequest req);
 
-    // ===== Admin (4) =====
-    @GET("api/v1/admin/categories")
-    Call<Envelope<AdminCategoryListResponse>> adminListCategories(@Query("type") String type);
+    @GET("api/v1/categories/{id}/notes")
+    Call<Envelope<NoteListResponse>> notesInCategory(@Path("id") long id);
 
-    @POST("api/v1/admin/categories")
-    Call<Envelope<AdminCreateResponse>> adminCreateCategory(@Body AdminCreateRequest req);
-
-    @PATCH("api/v1/admin/categories/{id}")
-    Call<Envelope<Object>> adminUpdateCategory(@Path("id") long id, @Body AdminUpdateRequest req);
-
-    @DELETE("api/v1/admin/categories/{id}")
-    Call<Envelope<Object>> adminDeleteCategory(@Path("id") long id);
-
-    @POST("api/v1/admin/categories/reset")
-    Call<Envelope<AdminResetResponse>> adminResetCategories(@Body AdminResetRequest req);
-
-    // ===== Notes: Folders (4) =====
-    @GET("api/v1/folders")
-    Call<Envelope<FolderListResponse>> listFolders();
-
-    @POST("api/v1/folders")
-    Call<Envelope<FolderCreateResponse>> createFolder(@Body FolderCreateRequest req);
-
-    @PATCH("api/v1/folders/{id}")
-    Call<Envelope<Object>> updateFolder(@Path("id") long id, @Body FolderUpdateRequest req);
-
-    @DELETE("api/v1/folders/{id}")
-    Call<Envelope<Object>> deleteFolder(@Path("id") long id);
-
-    // ===== Notes: Notes CRUD (6) =====
+    // ===== Notes: CRUD (6) =====
     @GET("api/v1/notes")
     Call<Envelope<NoteListResponse>> listNotes(
-        @Query("folderId") Long folderId,
+        @Query("categoryId") Long categoryId,
         @Query("page") int page,
         @Query("pageSize") int pageSize);
 
@@ -147,12 +67,23 @@ public interface ApiService {
     @POST("api/v1/notes/{id}/export")
     Call<Envelope<ExportResponse>> exportNote(@Path("id") long id, @Body ExportRequest req);
 
-    // ===== Notes: Files (1) =====
+    @POST("api/v1/notes/{id}/categories")
+    Call<Envelope<NoteCategoriesResponse>> setNoteCategories(
+        @Path("id") long id, @Body NoteCategoriesUpdate req);
+
+    // ===== Notes: Files (2) =====
     @Multipart
     @POST("api/v1/note-files/upload")
     Call<Envelope<NoteFileUploadResponse>> uploadNoteFiles(
         @Part List<MultipartBody.Part> files,
         @Part("noteId") okhttp3.RequestBody noteId);
+
+    @DELETE("api/v1/note-files/{fileId}")
+    Call<Envelope<Object>> deleteNoteFile(@Path("fileId") long fileId);
+
+    // ===== Notes: Image Cleanup (1) =====
+    @POST("api/v1/note-image-cleanup")
+    Call<Envelope<ImageCleanupResponse>> cleanupImage(@Body ImageCleanupRequest req);
 
     // ===== Notes: AI (7) =====
     @POST("api/v1/note-ai/ocr")
@@ -170,14 +101,13 @@ public interface ApiService {
     @POST("api/v1/note-ai/translate")
     Call<Envelope<TranslateResponse>> aiTranslate(@Body TranslateRequest req);
 
-    @GET("api/v1/note-ai/status")
-    Call<Envelope<NoteAiStatusResponse>> aiNoteStatus();
+    @POST("api/v1/note-ai/mindmap")
+    Call<Envelope<MindmapResponse>> aiMindmap(@Body MindmapRequest req);
 
     @POST("api/v1/note-ai/retry")
     Call<Envelope<EnqueueResponse>> aiNoteRetry(@Body NoteRetryRequest req);
 
     // ===== Notes: Search (1) =====
     @POST("api/v1/note-search")
-    Call<Envelope<com.ai_photo.data.model.note_search.SearchResponse>> noteSearch(
-        @Body com.ai_photo.data.model.note_search.SearchRequest req);
+    Call<Envelope<SearchResponse>> noteSearch(@Body SearchRequest req);
 }

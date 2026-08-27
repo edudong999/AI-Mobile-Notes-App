@@ -14,22 +14,31 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.ai_photo.R;
 import com.ai_photo.data.local.NoteEntity;
 import com.ai_photo.data.local.NoteFileEntity;
+import com.ai_photo.data.model.category.CategoryItem;
+import com.ai_photo.data.model.category.CategoryListResponse;
 import com.ai_photo.data.model.note.NoteDetailResponse;
 import com.ai_photo.data.model.note_ai.EnqueueResponse;
+import com.ai_photo.data.repo.CategoryRepo;
 import com.ai_photo.data.repo.NoteAiRepo;
 import com.ai_photo.data.repo.NoteRepo;
 import com.ai_photo.util.BgExecutor;
 import com.ai_photo.util.GlideUtil;
 import com.ai_photo.util.Result;
 import com.ai_photo.util.ServerPrefs;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class NoteDetailFragment extends Fragment {
     private static final String ARG_NOTE_ID = "noteId";
 
     private long noteId;
     private NoteRepo repo;
+    private CategoryRepo catRepo;
     private NoteAiActions ai;
     private TextView titleView, metaView, summaryView, bodyView, questionsEntryText;
     private EditText editor;
@@ -39,6 +48,7 @@ public class NoteDetailFragment extends Fragment {
     private View aiOverlay;
     private TextView aiOverlayLabel;
     private Button btnSave, btnDelete;
+    private ChipGroup categoriesChipGroup;
     private NoteEntity cached;
     private int questionsCount = 0;
     private volatile boolean isSaving = false;
@@ -62,6 +72,7 @@ public class NoteDetailFragment extends Fragment {
         super.onCreate(b);
         if (getArguments() != null) noteId = getArguments().getLong(ARG_NOTE_ID);
         repo = new NoteRepo(requireContext());
+        catRepo = new CategoryRepo();
         ai = new NoteAiActions();
     }
 
@@ -90,6 +101,7 @@ public class NoteDetailFragment extends Fragment {
         aiOverlayLabel = view.findViewById(R.id.ai_loading_label);
         btnSave = view.findViewById(R.id.btn_save);
         btnDelete = view.findViewById(R.id.btn_delete);
+        categoriesChipGroup = view.findViewById(R.id.categories_chip_group);
 
         filesStrip.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
 
@@ -169,6 +181,61 @@ public class NoteDetailFragment extends Fragment {
         view.findViewById(R.id.btn_delete).setOnClickListener(v -> confirmDelete());
 
         loadDetail();
+        loadCategories();
+    }
+
+    private void loadCategories() {
+        BgExecutor.execute(() -> {
+            Result<?> r = catRepo.list();
+            if (!(r instanceof Result.Success)) return;
+            CategoryListResponse data = (CategoryListResponse) ((Result.Success<?>) r).data;
+            if (data == null || data.list == null) return;
+            final List<CategoryItem> items = new ArrayList<>(data.list);
+            final android.app.Activity a = getActivity();
+            if (a == null || a.isDestroyed()) return;
+            a.runOnUiThread(() -> renderCategoryChips(items));
+        });
+    }
+
+    private void renderCategoryChips(List<CategoryItem> items) {
+        if (categoriesChipGroup == null) return;
+        categoriesChipGroup.removeAllViews();
+        Set<Long> selected = currentCategoryIdSet();
+        for (CategoryItem c : items) {
+            Chip chip = new Chip(requireContext());
+            chip.setText(c.name);
+            chip.setCheckable(true);
+            chip.setChecked(selected.contains(c.categoryId));
+            chip.setTag(c.categoryId);
+            categoriesChipGroup.addView(chip);
+        }
+    }
+
+    private Set<Long> currentCategoryIdSet() {
+        Set<Long> set = new HashSet<>();
+        if (cached != null && cached.categoriesCsv != null && !cached.categoriesCsv.isEmpty()) {
+            for (String s : cached.categoriesCsv.split(",")) {
+                try { set.add(Long.parseLong(s.trim())); } catch (Exception ignore) {}
+            }
+        }
+        return set;
+    }
+
+    private List<Integer> selectedCategoryIds() {
+        List<Integer> ids = new ArrayList<>();
+        if (categoriesChipGroup == null) return ids;
+        for (int i = 0; i < categoriesChipGroup.getChildCount(); i++) {
+            View v = categoriesChipGroup.getChildAt(i);
+            if (v instanceof Chip) {
+                Chip c = (Chip) v;
+                if (c.isChecked()) {
+                    Object tag = c.getTag();
+                    if (tag instanceof Long) ids.add(((Long) tag).intValue());
+                    else if (tag instanceof Integer) ids.add((Integer) tag);
+                }
+            }
+        }
+        return ids;
     }
 
     private void setProgress(boolean loading, boolean saving, boolean deleting) {
@@ -248,7 +315,7 @@ public class NoteDetailFragment extends Fragment {
                     if (gen != loadGeneration || getView() == null) return;
                     renderFromLocal(forRender, filesForRender);
                     if (filesForRender != null && !filesForRender.isEmpty()) {
-                        filesStrip.setAdapter(new FilesStripAdapter(filesForRender));
+                        filesStrip.setAdapter(new FilesStripAdapter(filesForRender, noteId));
                     }
                 });
             }
@@ -265,7 +332,7 @@ public class NoteDetailFragment extends Fragment {
                 if (d != null) {
                     NoteEntity ne = local != null ? local : new NoteEntity();
                     ne.noteId = d.noteId;
-                    ne.folderId = d.folderId;
+                    ne.categoriesCsv = joinIds(d.categories);
                     ne.title = d.title != null ? d.title : "";
                     ne.textContent = d.textContent != null ? d.textContent : "";
                     ne.summary = d.summary != null ? d.summary : "";
@@ -310,7 +377,7 @@ public class NoteDetailFragment extends Fragment {
                         }
                         renderFromLocal(ne, merged);
                         if (!merged.isEmpty()) {
-                            filesStrip.setAdapter(new FilesStripAdapter(merged));
+                            filesStrip.setAdapter(new FilesStripAdapter(merged, noteId));
                         } else {
                             filesStrip.setAdapter(null);
                         }
@@ -383,7 +450,7 @@ public class NoteDetailFragment extends Fragment {
             }
         }
         if (files != null && !files.isEmpty()) {
-            filesStrip.setAdapter(new FilesStripAdapter(files));
+            filesStrip.setAdapter(new FilesStripAdapter(files, noteId));
         } else {
             filesStrip.setAdapter(null);
         }
@@ -415,7 +482,7 @@ public class NoteDetailFragment extends Fragment {
         if (!toUpsert.isEmpty()) {
             repo.noteFileDao().upsertAll(toUpsert);
         }
-        filesStrip.setAdapter(new FilesStripAdapter(list));
+        filesStrip.setAdapter(new FilesStripAdapter(list, noteId));
     }
 
     private void refreshStatus() {
@@ -550,10 +617,10 @@ public class NoteDetailFragment extends Fragment {
             return;
         }
         // 增量更新：cached 未就绪时只更新 textContent，避免把 title 清空
-        final Long folderId   = cached != null ? cached.folderId : null;
         final String title    = cached != null && cached.title != null ? cached.title : null;
         final Boolean archived = cached != null ? cached.isArchived : null;
         final String toSave   = text != null ? text : "";
+        final List<Integer> catIds = selectedCategoryIds();
 
         // 占位文本不允许直接保存 —— 否则会把「（正文为空…）」当真实内容存进去
         if (toSave.equals(getString(R.string.note_detail_body_empty))) {
@@ -569,13 +636,14 @@ public class NoteDetailFragment extends Fragment {
         setProgress(isLoading, true, isDeleting);
 
         BgExecutor.execute(() -> {
-            Result<?> r = repo.updateNote(noteId, folderId, title, toSave, archived);
+            Result<?> r = repo.updateNote(noteId, title, toSave, archived, catIds);
             final boolean ok = r instanceof Result.Success;
             final String errMsg;
             if (ok) {
                 NoteEntity ne = repo.noteDao().byId(noteId);
                 if (ne != null) {
                     ne.textContent = toSave;
+                    ne.categoriesCsv = joinIds(catIds);
                     repo.noteDao().upsert(ne);
                     cached = ne;
                 }
@@ -912,10 +980,24 @@ public class NoteDetailFragment extends Fragment {
         catch (Exception e) { return 0L; }
     }
 
+    private static String joinIds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < ids.size(); i++) {
+            if (i > 0) sb.append(',');
+            sb.append(ids.get(i));
+        }
+        return sb.toString();
+    }
+
     /** Tiny horizontal strip adapter — ImageView per row, 160dp, square. */
     static class FilesStripAdapter extends RecyclerView.Adapter<FilesStripAdapter.VH> {
         private final List<NoteFileEntity> items;
-        FilesStripAdapter(List<NoteFileEntity> items) { this.items = items; }
+        private final long adapterNoteId;
+        FilesStripAdapter(List<NoteFileEntity> items, long noteId) {
+            this.items = items;
+            this.adapterNoteId = noteId;
+        }
         @NonNull @Override public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             ImageView iv = new ImageView(parent.getContext());
             android.view.ViewGroup.LayoutParams lp = new android.view.ViewGroup.LayoutParams(
@@ -939,6 +1021,8 @@ public class NoteDetailFragment extends Fragment {
                 android.content.Intent intent = new android.content.Intent(ctx,
                     com.ai_photo.ui.common.PhotoPreviewActivity.class);
                 intent.putExtra(com.ai_photo.ui.common.PhotoPreviewActivity.EXTRA_URL, previewUrl);
+                intent.putExtra(com.ai_photo.ui.common.PhotoPreviewActivity.EXTRA_NOTE_ID, adapterNoteId);
+                intent.putExtra(com.ai_photo.ui.common.PhotoPreviewActivity.EXTRA_FILE_ID, e.fileId);
                 ctx.startActivity(intent);
             });
         }

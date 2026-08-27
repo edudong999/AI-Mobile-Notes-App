@@ -50,6 +50,7 @@ async def keyword_search(db: AsyncSession, user_id: int, query: str,
     )).scalars().all()
     return [{
         "noteId": n.note_id,
+        "title": n.title or "",
         "score": 1.0,
         "snippet": (n.summary or n.text_content or "")[:120],
         "matchedSnippet": _find_snippet(n.text_content or n.summary or "", query),
@@ -99,6 +100,7 @@ async def semantic_search(db: AsyncSession, user_id: int, query: str,
             continue
         out.append({
             "noteId": nid,
+            "title": n.title or "",
             "score": round(float(score), 4),
             "snippet": (n.summary or n.text_content or "")[:120],
             "matchedSnippet": _find_snippet(n.text_content or n.summary or "", query),

@@ -37,12 +37,13 @@ async def list_(
     page: int = Query(1, ge=1),
     pageSize: int = Query(20, ge=1, le=100),
     archived: bool | None = Query(None),
+    categoryId: int | None = Query(None),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """分页列出当前用户的笔记。"""
+    """分页列出当前用户的笔记，可按归档/分类过滤。"""
     rows, total = await note_service.list_notes(
-        db, user.user_id, page, pageSize, archived
+        db, user.user_id, page, pageSize, archived, categoryId
     )
     items = [
         NoteListItem(
@@ -133,10 +134,10 @@ async def update(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """增量更新笔记字段。"""
+    """增量更新笔记字段。categories 若提供则整体替换分类集合。"""
     await note_service.update_note(
         db, note_id, user.user_id,
-        body.title, body.textContent, body.isArchived,
+        body.title, body.textContent, body.isArchived, body.categories,
     )
     return ok(message="已保存")
 

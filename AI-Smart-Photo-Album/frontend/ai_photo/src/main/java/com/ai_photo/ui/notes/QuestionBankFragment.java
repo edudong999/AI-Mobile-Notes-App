@@ -120,6 +120,14 @@ public class QuestionBankFragment extends Fragment {
             QuestionItem q = items.get(pos);
             h.type.setText(q.questionType != null ? q.questionType : "");
             h.stem.setText(q.stem != null ? q.stem : "");
+            // 选项：仅选择题（options 非空）展示；判断题/简答题隐藏
+            String optsText = formatOptions(q.options);
+            if (optsText.isEmpty()) {
+                h.options.setVisibility(View.GONE);
+            } else {
+                h.options.setText(optsText);
+                h.options.setVisibility(View.VISIBLE);
+            }
             h.answer.setText("答案：" + (q.answer != null ? q.answer : ""));
             h.explanation.setText(q.explanation != null ? q.explanation : "");
             boolean showAnswer = h.itemView.getTag() != null && (Boolean) h.itemView.getTag();
@@ -133,13 +141,28 @@ public class QuestionBankFragment extends Fragment {
                 h.explanation.setVisibility(newState ? View.VISIBLE : View.GONE);
             });
         }
+
+        /** 渲染 "A. xxx\nB. xxx\n..."；空列表返回空串。 */
+        private static String formatOptions(List<String> options) {
+            if (options == null || options.isEmpty()) return "";
+            StringBuilder sb = new StringBuilder();
+            char letter = 'A';
+            for (int i = 0; i < options.size(); i++) {
+                if (i > 0) sb.append('\n');
+                sb.append(letter).append(". ").append(options.get(i));
+                letter++;
+            }
+            return sb.toString();
+        }
+
         @Override public int getItemCount() { return items.size(); }
         static class VH extends RecyclerView.ViewHolder {
-            TextView type, stem, answer, explanation;
+            TextView type, stem, options, answer, explanation;
             VH(View v) {
                 super(v);
                 type = v.findViewById(R.id.question_type);
                 stem = v.findViewById(R.id.question_stem);
+                options = v.findViewById(R.id.question_options);
                 answer = v.findViewById(R.id.question_answer);
                 explanation = v.findViewById(R.id.question_explanation);
             }

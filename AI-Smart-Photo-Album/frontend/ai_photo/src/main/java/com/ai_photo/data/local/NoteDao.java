@@ -4,8 +4,8 @@ import java.util.List;
 
 @Dao
 public interface NoteDao {
-    @Query("SELECT * FROM notes WHERE (:folderId IS NULL OR folderId = :folderId) AND isArchived = 0 ORDER BY updatedAt DESC LIMIT :limit")
-    List<NoteEntity> byFolder(Long folderId, int limit);
+    @Query("SELECT * FROM notes WHERE isArchived = 0 ORDER BY updatedAt DESC LIMIT :limit")
+    List<NoteEntity> recent(int limit);
 
     @Query("SELECT * FROM notes WHERE noteId = :id")
     NoteEntity byId(long id);

@@ -63,15 +63,6 @@ class NoteAiJobItem(BaseModel):
     updatedAt: str | None
 
 
-class NoteAiStatusResponse(BaseModel):
-    total: int
-    done: int
-    pending: int
-    processing: int
-    failed: int
-    progress: float
-
-
 class NoteAiQueueResponse(BaseModel):
     pending: list[NoteAiJobItem]
     processing: list[NoteAiJobItem]
@@ -81,3 +72,21 @@ class NoteAiQueueResponse(BaseModel):
 
 class NoteRetryRequest(BaseModel):
     jobIds: list[int]
+
+
+class MindmapRequest(BaseModel):
+    noteId: int
+    maxDepth: int = 3
+
+
+class MindmapNode(BaseModel):
+    label: str
+    children: list["MindmapNode"] = []
+
+
+class MindmapResponse(BaseModel):
+    noteId: int
+    tree: MindmapNode
+
+
+MindmapNode.model_rebuild()

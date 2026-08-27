@@ -28,7 +28,7 @@ async def search(
     """执行搜索：auto 模式默认走 semantic，失败回退 keyword。"""
     q = body.query.strip()
     if not q:
-        return ok(data=SearchResponse(list=[], engine="keyword").model_dump())
+        return ok(data=SearchResponse(hits=[], mode="keyword").model_dump())
 
     mode = body.mode
     if mode in ("auto", "semantic"):
@@ -38,18 +38,18 @@ async def search(
             )
             if hits:
                 return ok(data=SearchResponse(
-                    list=[SearchHit(**h).model_dump() for h in hits],
-                    engine="semantic",
+                    hits=[SearchHit(**h).model_dump() for h in hits],
+                    mode="semantic",
                 ).model_dump())
         except LLMError:
             if mode == "semantic":
                 # 强制 semantic 模式失败时直接返回 fallback
-                return ok(data=SearchResponse(list=[], engine="fallback").model_dump())
+                return ok(data=SearchResponse(hits=[], mode="fallback").model_dump())
 
     hits = await note_search_service.keyword_search(
         db, user.user_id, q, body.folderId, body.topK,
     )
     return ok(data=SearchResponse(
-        list=[SearchHit(**h).model_dump() for h in hits],
-        engine="keyword" if mode != "auto" else "fallback",
+        hits=[SearchHit(**h).model_dump() for h in hits],
+        mode="keyword" if mode != "auto" else "fallback",
     ).model_dump())

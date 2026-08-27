@@ -11,6 +11,8 @@ import com.ai_photo.data.repo.AuthRepo;
 import com.ai_photo.ui.main.MainActivity;
 import com.ai_photo.util.BgExecutor;
 import com.ai_photo.util.Result;
+import com.ai_photo.util.ServerSettingsDialog;
+import com.ai_photo.util.ServerPrefs;
 
 public class LoginActivity extends AppCompatActivity {
     private AuthRepo repo = new AuthRepo();
@@ -18,7 +20,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private EditText username, password, email;
     private Button submit;
-    private TextView toggle, title;
+    private TextView toggle, title, serverHint;
     private ProgressBar loading;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +37,7 @@ public class LoginActivity extends AppCompatActivity {
         email = findViewById(R.id.email);
         submit = findViewById(R.id.submit);
         toggle = findViewById(R.id.toggle);
+        serverHint = findViewById(R.id.server_hint);
         loading = findViewById(R.id.loading);
 
         toggle.setOnClickListener(v -> {
@@ -42,6 +45,13 @@ public class LoginActivity extends AppCompatActivity {
             applyMode();
         });
         submit.setOnClickListener(v -> doSubmit());
+        // 长按标题 → 打开服务器设置（登录前就能改地址）
+        title.setOnLongClickListener(v -> {
+            ServerSettingsDialog.show(LoginActivity.this, null);
+            return true;
+        });
+        serverHint.setOnClickListener(v ->
+            ServerSettingsDialog.show(LoginActivity.this, null));
         applyMode();
     }
 

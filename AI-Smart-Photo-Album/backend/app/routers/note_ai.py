@@ -2,29 +2,26 @@
 
 - POST /ocr, /summary: 入 AITask 队列（worker 后台处理）。
 - POST /questions, /polish, /translate: 直接调 note_ai_service.run_* 同步执行。
-- GET /status: 当前用户笔记 AI 进度统计。
 - POST /retry: 把失败任务重置回 queued。
-
-注：spec 中提到的 /queue 端点在本任务跳过 —— 笔记的 AI 进度已由
-GET /api/v1/note-ai/status 提供，按状态分桶展示需求由前端处理。
-（照片侧的 /api/v1/ai/queue 不在本路由范围内。）
 """
 import asyncio
 import json as _json
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.deps import get_current_user
 from app.exceptions import BizException
-from app.models import AITask, AITaskStatus, AIStatus, JobKind, Note, User
+from app.models import AITask, AITaskStatus, JobKind, User
 from app.models.ai_task import NoteSubKind, notify_new_task
 from app.response import ok
 from app.schemas.note_ai import (
     EnqueueResponse,
-    NoteAiStatusResponse,
+    MindmapNode,
+    MindmapRequest,
+    MindmapResponse,
     NoteRetryRequest,
     OcrRequest,
     PolishRequest,
@@ -146,44 +143,25 @@ async def translate(
     return ok(data=TranslateResponse(result=r).model_dump())
 
 
-@router.get("/status")
-async def status(
+@router.post("/mindmap")
+async def mindmap(
+    body: MindmapRequest,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """当前用户笔记 AI 处理进度（按 AIStatus 分桶）。"""
-    base = [Note.user_id == user.user_id, Note.deleted_at.is_(None)]
-    total = (await db.execute(
-        select(func.count(Note.note_id)).where(*base)
-    )).scalar_one()
-    done = (await db.execute(
-        select(func.count(Note.note_id)).where(
-            *base, Note.ai_status == AIStatus.done,
+    """同步生成思维导图树，落库 notes.mindmap_json。"""
+    await get_note(db, body.noteId, user.user_id)
+    try:
+        tree = await asyncio.wait_for(
+            note_ai_service.run_mindmap(db, body.noteId, body.maxDepth),
+            timeout=60,
         )
-    )).scalar_one()
-    pending = (await db.execute(
-        select(func.count(Note.note_id)).where(
-            *base, Note.ai_status == AIStatus.pending,
-        )
-    )).scalar_one()
-    processing = (await db.execute(
-        select(func.count(Note.note_id)).where(
-            *base, Note.ai_status == AIStatus.processing,
-        )
-    )).scalar_one()
-    failed = (await db.execute(
-        select(func.count(Note.note_id)).where(
-            *base, Note.ai_status == AIStatus.failed,
-        )
-    )).scalar_one()
+    except asyncio.TimeoutError:
+        raise BizException(504, "LLM 生成思维导图超时")
     return ok(
-        data=NoteAiStatusResponse(
-            total=total,
-            done=done,
-            pending=pending,
-            processing=processing,
-            failed=failed,
-            progress=(done / total) if total else 0.0,
+        data=MindmapResponse(
+            noteId=body.noteId,
+            tree=MindmapNode(**tree),
         ).model_dump()
     )
 

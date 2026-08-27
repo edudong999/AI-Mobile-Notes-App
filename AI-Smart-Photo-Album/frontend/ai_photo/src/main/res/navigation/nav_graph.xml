@@ -3,105 +3,33 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/photosFragment">
+    app:startDestination="@id/notesFragment">
 
-    <fragment
-        android:id="@+id/photosFragment"
-        android:name="com.ai_photo.ui.photos.PhotoListFragment"
-        android:label="@string/title_photos"
-        tools:layout="@layout/fragment_photo_list" />
-
-    <fragment
-        android:id="@+id/searchFragment"
-        android:name="com.ai_photo.ui.search.SearchFragment"
-        android:label="@string/title_search"
-        tools:layout="@layout/fragment_search" />
-
-    <fragment
-        android:id="@+id/categoriesFragment"
-        android:name="com.ai_photo.ui.categories.CategoriesFragment"
-        android:label="@string/title_categories"
-        tools:layout="@layout/fragment_categories" />
-
-    <fragment
-        android:id="@+id/aiQueueFragment"
-        android:name="com.ai_photo.ui.ai.AiQueueFragment"
-        android:label="@string/title_ai"
-        tools:layout="@layout/fragment_ai_queue" />
-
-    <fragment
-        android:id="@+id/profileFragment"
-        android:name="com.ai_photo.ui.profile.ProfileFragment"
-        android:label="@string/title_profile"
-        tools:layout="@layout/fragment_profile" />
-
-    <!-- Stack-only destinations added in Tasks 11, 14, 16, 17, 19 -->
-
-    <fragment
-        android:id="@+id/photoDetailFragment"
-        android:name="com.ai_photo.ui.photos.PhotoDetailFragment"
-        android:label="Detail"
-        tools:layout="@layout/fragment_photo_detail">
-        <argument
-            android:name="photoId"
-            app:argType="long" />
-    </fragment>
-
-    <action
-        android:id="@+id/action_to_detail"
-        app:destination="@id/photoDetailFragment" />
-
-    <fragment
-        android:id="@+id/categoryPhotosFragment"
-        android:name="com.ai_photo.ui.categories.CategoryPhotosFragment"
-        android:label="Photos"
-        xmlns:tools="http://schemas.android.com/tools"
-        tools:layout="@layout/fragment_category_photos">
-        <argument android:name="categoryId" app:argType="long" />
-        <argument android:name="categoryName" app:argType="string" />
-    </fragment>
-
-    <action
-        android:id="@+id/action_to_category_photos"
-        app:destination="@id/categoryPhotosFragment" />
-
-    <fragment
-        android:id="@+id/favoritesFragment"
-        android:name="com.ai_photo.ui.profile.FavoritesFragment"
-        android:label="Favorites"
-        xmlns:tools="http://schemas.android.com/tools"
-        tools:layout="@layout/fragment_favorites" />
-
-    <fragment
-        android:id="@+id/statisticsFragment"
-        android:name="com.ai_photo.ui.profile.StatisticsFragment"
-        android:label="Statistics"
-        xmlns:tools="http://schemas.android.com/tools"
-        tools:layout="@layout/fragment_statistics" />
-
-    <action
-        android:id="@+id/action_to_favorites"
-        app:destination="@id/favoritesFragment" />
-    <action
-        android:id="@+id/action_to_statistics"
-        app:destination="@id/statisticsFragment" />
-
-    <fragment
-        android:id="@+id/adminCategoryFragment"
-        android:name="com.ai_photo.ui.admin.AdminCategoryFragment"
-        android:label="Admin"
-        xmlns:tools="http://schemas.android.com/tools"
-        tools:layout="@layout/fragment_admin_category" />
-
-    <action
-        android:id="@+id/action_to_admin"
-        app:destination="@id/adminCategoryFragment" />
-
+    <!-- Bottom-nav destinations -->
     <fragment
         android:id="@+id/notesFragment"
         android:name="com.ai_photo.ui.notes.NotesFragment"
         android:label="@string/nav_notes"
-        tools:layout="@layout/fragment_notes" />
+        tools:layout="@layout/fragment_notes">
+        <argument
+            android:name="categoryId"
+            android:defaultValue="-1L"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/noteSearchFragment"
+        android:name="com.ai_photo.ui.notes.NoteSearchFragment"
+        android:label="@string/nav_search"
+        tools:layout="@layout/fragment_note_search" />
+
+    <fragment
+        android:id="@+id/meFragment"
+        android:name="com.ai_photo.ui.me.MeFragment"
+        android:label="@string/nav_me"
+        tools:layout="@layout/fragment_me" />
+
+    <!-- Stack-only destinations -->
 
     <fragment
         android:id="@+id/noteDetailFragment"
@@ -121,11 +49,9 @@
         android:label="@string/capture_title_label"
         tools:layout="@layout/fragment_capture" />
 
-    <fragment
-        android:id="@+id/folderManageFragment"
-        android:name="com.ai_photo.ui.folders.FolderManageFragment"
-        android:label="@string/folder_manage_title"
-        tools:layout="@layout/fragment_folder_manage" />
+    <action
+        android:id="@+id/action_to_capture"
+        app:destination="@id/captureFragment" />
 
     <fragment
         android:id="@+id/questionBankFragment"
@@ -136,20 +62,37 @@
     </fragment>
 
     <action
-        android:id="@+id/action_to_capture"
-        app:destination="@id/captureFragment" />
-
-    <action
-        android:id="@+id/action_to_folder_manage"
-        app:destination="@id/folderManageFragment" />
-
-    <action
         android:id="@+id/action_to_question_bank"
         app:destination="@id/questionBankFragment" />
 
     <fragment
-        android:id="@+id/noteSearchFragment"
-        android:name="com.ai_photo.ui.notes.NoteSearchFragment"
-        android:label="@string/nav_search"
-        tools:layout="@layout/fragment_note_search" />
+        android:id="@+id/mindMapFragment"
+        android:name="com.ai_photo.ui.notes.MindMapFragment"
+        android:label="@string/mind_map_title"
+        tools:layout="@layout/fragment_mind_map">
+        <argument android:name="noteId" app:argType="long" />
+    </fragment>
+
+    <action
+        android:id="@+id/action_to_mind_map"
+        app:destination="@id/mindMapFragment" />
+
+    <!-- Me-tab stack destinations -->
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.ai_photo.ui.me.SettingsFragment"
+        android:label="@string/me_row_settings"
+        tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/categoriesFragment"
+        android:name="com.ai_photo.ui.me.CategoriesFragment"
+        android:label="@string/me_row_categories"
+        tools:layout="@layout/fragment_categories" />
+
+    <fragment
+        android:id="@+id/aboutFragment"
+        android:name="com.ai_photo.ui.me.AboutFragment"
+        android:label="@string/me_row_about"
+        tools:layout="@layout/fragment_about" />
 </navigation>

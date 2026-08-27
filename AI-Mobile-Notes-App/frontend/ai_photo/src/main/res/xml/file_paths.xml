@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Camera capture temp files live in cache/capture/ -->
+    <cache-path name="capture" path="capture/" />
+    <!-- Upload staging copies (read by repo.uploadNoteFiles) -->
+    <cache-path name="cache" path="." />
+    <files-path name="files" path="." />
+</paths>

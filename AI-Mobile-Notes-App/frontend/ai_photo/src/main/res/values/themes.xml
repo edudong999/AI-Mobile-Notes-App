@@ -1,0 +1,13 @@
+<resources>
+    <style name="Theme.AiPhoto" parent="Theme.MaterialComponents.DayNight" />
+    <style name="Theme.AiPhoto.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+    <style name="Theme.AiPhoto.NoActionBar.Fullscreen">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+</resources>

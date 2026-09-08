@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Marker integer used by AiQueueAdapter to decide whether a status description
-         string takes a retry-count formatter arg. Value doesn't matter; non-zero means "use". -->
-    <integer name="ai_queue_retry_count">1</integer>
-</resources>
